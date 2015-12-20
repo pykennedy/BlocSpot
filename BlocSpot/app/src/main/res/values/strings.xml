@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">BlocSpot</string>
+    <string name="google_maps_key">	AIzaSyBxZvz1etFbUNszV5liT8DddvHVRrNZ_bo</string>
+    <string name="title_activity_maps">Map</string>
+
+    <string name="menu_menu">Menu</string>
+    <string name="menu_add">Add POI</string>
+    <string name="menu_notify">Notify Me of Nearby POI\'s</string>
+    <string name="menu_search">Search Yelp for More POI\'s</string>
+    <string name="menu_settings">Settings</string>
+</resources>
