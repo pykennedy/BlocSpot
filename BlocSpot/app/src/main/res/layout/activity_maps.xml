@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -10,8 +10,8 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="100"
-        tools:context=".ui.activity.MapsActivity" />
+        tools:context=".ui.activity.MapsActivity"
+        android:layout_above="@+id/tb_maps_activity"/>
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/tb_maps_activity"
@@ -19,8 +19,7 @@
         android:background="?attr/colorPrimary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="0"
-        android:layout_below="@+id/tb_maps_activity" />
+        android:layout_alignParentBottom="true" />
 
-</LinearLayout>
+</RelativeLayout>
 

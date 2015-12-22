@@ -30,6 +30,86 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Menu mMenu;
     private Toolbar mToolbar;
 
+    private boolean mMenuIsOn, mAddIsOn, mNotifyIsOn, mSearchIsOn, mSettingsIsOn;
+
+    private boolean setLights(String title) {
+        boolean openWindow = false;
+        switch(title) {
+            case "menu":
+                mMenu.getItem(1).setIcon(R.drawable.add_dark);
+                mAddIsOn = false;
+                mMenu.getItem(3).setIcon(R.drawable.search_dark);
+                mSearchIsOn = false;
+                mMenu.getItem(4).setIcon(R.drawable.settings_dark);
+                mSettingsIsOn = false;
+                mMenuIsOn = !mMenuIsOn;
+                if(mMenuIsOn) {
+                    openWindow = true;
+                    mMenu.getItem(0).setIcon(R.drawable.menu_light);
+                }
+                else
+                    mMenu.getItem(0).setIcon(R.drawable.menu_dark);
+                break;
+            case "add":
+                mMenu.getItem(0).setIcon(R.drawable.menu_dark);
+                mMenuIsOn = false;
+                mMenu.getItem(3).setIcon(R.drawable.search_dark);
+                mSearchIsOn = false;
+                mMenu.getItem(4).setIcon(R.drawable.settings_dark);
+                mSettingsIsOn = false;
+                mAddIsOn = !mAddIsOn;
+                if(mAddIsOn) {
+                    openWindow = true;
+                    mMenu.getItem(1).setIcon(R.drawable.add_light);
+                }
+                else
+                    mMenu.getItem(1).setIcon(R.drawable.add_dark);
+                break;
+            case "notify":
+                mNotifyIsOn = !mNotifyIsOn;
+                if(mNotifyIsOn) {
+                    openWindow = true;
+                    mMenu.getItem(2).setIcon(R.drawable.notify_light);
+                }
+                else
+                    mMenu.getItem(2).setIcon(R.drawable.notify_dark);
+                break;
+            case "search":
+                mMenu.getItem(0).setIcon(R.drawable.menu_dark);
+                mMenuIsOn = false;
+                mMenu.getItem(1).setIcon(R.drawable.add_dark);
+                mAddIsOn = false;
+                mMenu.getItem(4).setIcon(R.drawable.settings_dark);
+                mSettingsIsOn = false;
+                mSearchIsOn = !mSearchIsOn;
+                if(mSearchIsOn) {
+                    openWindow = true;
+                    mMenu.getItem(3).setIcon(R.drawable.search_light);
+                }
+                else
+                    mMenu.getItem(3).setIcon(R.drawable.search_dark);
+                break;
+            case "settings":
+                mMenu.getItem(0).setIcon(R.drawable.menu_dark);
+                mMenuIsOn = false;
+                mMenu.getItem(1).setIcon(R.drawable.add_dark);
+                mAddIsOn = false;
+                mMenu.getItem(3).setIcon(R.drawable.search_dark);
+                mSearchIsOn = false;
+                mSettingsIsOn = !mSettingsIsOn;
+                if(mSettingsIsOn) {
+                    openWindow = true;
+                    mMenu.getItem(4).setIcon(R.drawable.settings_light);
+                }
+                else
+                    mMenu.getItem(4).setIcon(R.drawable.settings_dark);
+                break;
+            default:
+                break;
+        }
+        return openWindow;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,11 +132,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        mMenu.getItem(0).setIcon(getResources().getDrawable(R.drawable.menu_light));
-        /* i can make a helper class that finds the ID's of the lit and unlit icons depending on the item title
-        but this seems innefiecient if i can can figure out how to set menuItems to checked or unchecked
-        with item.setChecked(boolean);
-         */
+        // returns true if the user is wanted to open a window
+        if(setLights(item.getTitle().toString())) {
+            //////////////
+        }
         return super.onOptionsItemSelected(item);
     }
 

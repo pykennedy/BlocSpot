@@ -8,23 +8,11 @@
         android:orderInCategory="0"
         app:showAsAction="always" />
 
-    <View
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_weight="1">
-    </View>
-
     <item android:id="@+id/menu_add"
         android:icon="@drawable/add_dark"
         android:title="@string/menu_add"
         android:orderInCategory="1"
         app:showAsAction="always"/>
-
-    <View
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_weight="1">
-    </View>
 
     <item android:id="@+id/menu_notify"
         android:icon="@drawable/notify_dark"
@@ -32,24 +20,12 @@
         android:orderInCategory="2"
         app:showAsAction="always"/>
 
-    <View
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_weight="1">
-    </View>
-
     <item android:id="@+id/menu_search"
         android:icon="@drawable/search_dark"
         android:title="@string/menu_search"
         android:orderInCategory="3"
         app:showAsAction="always"
         android:layout_weight="1"/>
-
-    <View
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_weight="1">
-    </View>
 
     <item android:id="@+id/menu_settings"
         android:icon="@drawable/settings_dark"
