@@ -14,6 +14,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.Transformation;
 import android.widget.ActionMenuView;
 
 import com.example.peter.blocspot.R;
@@ -29,10 +33,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private Menu mMenu;
     private Toolbar mToolbar;
+    View view;
+
+    static int targetHeight = 0;
 
     private boolean mMenuIsOn, mAddIsOn, mNotifyIsOn, mSearchIsOn, mSettingsIsOn;
 
     private boolean setLights(String title) {
+
         boolean openWindow = false;
         switch(title) {
             case "menu":
@@ -118,11 +126,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         setupEvenlyDistributedToolbar();
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+         //Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        view =  findViewById(R.id.popupWindow);
+        ViewTreeObserver viewTreeObserver = view.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    if(targetHeight == 0){
+                        targetHeight = view.getHeight();
+                        view.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
     }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -135,8 +159,64 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // returns true if the user is wanted to open a window
         if(setLights(item.getTitle().toString())) {
             //////////////
+            expand(view);
+        }else{
+            collapse(view);
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public static void expand(final View v) {
+
+        // Older versions of android (pre API 21) cancel animations for views with a height of 0.
+        v.getLayoutParams().height = 1;
+        v.setVisibility(View.VISIBLE);
+        Animation a = new Animation()
+        {
+            @Override
+            protected void applyTransformation(float interpolatedTime, Transformation t) {
+                int height = (int)(targetHeight * interpolatedTime);
+                v.getLayoutParams().height = height;
+                v.requestLayout();
+            }
+
+            @Override
+            public boolean willChangeBounds() {
+                return true;
+            }
+        };
+
+        // 1dp/ms
+        float density =  v.getContext().getResources().getDisplayMetrics().density;
+        a.setDuration(500);
+        a.setInterpolator(new LinearInterpolator());
+        v.startAnimation(a);
+    }
+
+    public static void collapse(final View v) {
+        final int initialHeight = v.getMeasuredHeight();
+
+        Animation a = new Animation()
+        {
+            @Override
+            protected void applyTransformation(float interpolatedTime, Transformation t) {
+                if(interpolatedTime == 1){
+                    v.setVisibility(View.GONE);
+                }else{
+                    v.getLayoutParams().height = initialHeight - (int)(initialHeight * interpolatedTime);
+                    v.requestLayout();
+                }
+            }
+
+            @Override
+            public boolean willChangeBounds() {
+                return true;
+            }
+        };
+
+        // 1dp/ms
+        a.setDuration((int)(initialHeight / v.getContext().getResources().getDisplayMetrics().density));
+        v.startAnimation(a);
     }
 
     public void setupEvenlyDistributedToolbar(){
@@ -194,6 +274,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
         try {
+            System.out.println("GOT TO ATTEMPTING CAMERA SHIFT");
             Location userLocation = locationManager.getLastKnownLocation(provider);
             double lat = userLocation.getLatitude();
             double lng = userLocation.getLongitude();
