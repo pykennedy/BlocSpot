@@ -5,6 +5,7 @@
     <item android:id="@+id/menu_menu"
         android:icon="@drawable/menu_button_show_menu"
         android:title="@string/menu_menu"
+        android:tag="boolean"
         android:orderInCategory="0"
         app:showAsAction="always" />
 

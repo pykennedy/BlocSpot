@@ -1,10 +1,14 @@
 package com.example.peter.blocspot.ui.activity;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
@@ -30,92 +34,90 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
 
+    private static final String[] INITIAL_PERMS={
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.READ_CONTACTS
+    };
+
     private GoogleMap mMap;
     private Menu mMenu;
     private Toolbar mToolbar;
     View view;
 
+    private LatLng user;
+    private LatLng targetPOI;
+
     static int targetHeight = 0;
 
-    private boolean mMenuIsOn, mAddIsOn, mNotifyIsOn, mSearchIsOn, mSettingsIsOn;
+    private boolean mNotifyIsOn;
 
-    private boolean setLights(String title) {
+    private MenuItem menu, add, notify, search, settings;
+    //used for determining which menu item is active
+    private String activeMenu = "";
 
-        boolean openWindow = false;
-        switch(title) {
-            case "menu":
-                mMenu.getItem(1).setIcon(R.drawable.add_dark);
-                mAddIsOn = false;
-                mMenu.getItem(3).setIcon(R.drawable.search_dark);
-                mSearchIsOn = false;
-                mMenu.getItem(4).setIcon(R.drawable.settings_dark);
-                mSettingsIsOn = false;
-                mMenuIsOn = !mMenuIsOn;
-                if(mMenuIsOn) {
-                    openWindow = true;
-                    mMenu.getItem(0).setIcon(R.drawable.menu_light);
-                }
-                else
-                    mMenu.getItem(0).setIcon(R.drawable.menu_dark);
-                break;
-            case "add":
-                mMenu.getItem(0).setIcon(R.drawable.menu_dark);
-                mMenuIsOn = false;
-                mMenu.getItem(3).setIcon(R.drawable.search_dark);
-                mSearchIsOn = false;
-                mMenu.getItem(4).setIcon(R.drawable.settings_dark);
-                mSettingsIsOn = false;
-                mAddIsOn = !mAddIsOn;
-                if(mAddIsOn) {
-                    openWindow = true;
-                    mMenu.getItem(1).setIcon(R.drawable.add_light);
-                }
-                else
-                    mMenu.getItem(1).setIcon(R.drawable.add_dark);
-                break;
-            case "notify":
-                mNotifyIsOn = !mNotifyIsOn;
-                if(mNotifyIsOn) {
-                    openWindow = true;
-                    mMenu.getItem(2).setIcon(R.drawable.notify_light);
-                }
-                else
-                    mMenu.getItem(2).setIcon(R.drawable.notify_dark);
-                break;
-            case "search":
-                mMenu.getItem(0).setIcon(R.drawable.menu_dark);
-                mMenuIsOn = false;
-                mMenu.getItem(1).setIcon(R.drawable.add_dark);
-                mAddIsOn = false;
-                mMenu.getItem(4).setIcon(R.drawable.settings_dark);
-                mSettingsIsOn = false;
-                mSearchIsOn = !mSearchIsOn;
-                if(mSearchIsOn) {
-                    openWindow = true;
-                    mMenu.getItem(3).setIcon(R.drawable.search_light);
-                }
-                else
-                    mMenu.getItem(3).setIcon(R.drawable.search_dark);
-                break;
-            case "settings":
-                mMenu.getItem(0).setIcon(R.drawable.menu_dark);
-                mMenuIsOn = false;
-                mMenu.getItem(1).setIcon(R.drawable.add_dark);
-                mAddIsOn = false;
-                mMenu.getItem(3).setIcon(R.drawable.search_dark);
-                mSearchIsOn = false;
-                mSettingsIsOn = !mSettingsIsOn;
-                if(mSettingsIsOn) {
-                    openWindow = true;
-                    mMenu.getItem(4).setIcon(R.drawable.settings_light);
-                }
-                else
-                    mMenu.getItem(4).setIcon(R.drawable.settings_dark);
-                break;
-            default:
-                break;
+    private final String MENU_TITLE = "menu";
+    private final String ADD_TITLE = "add";
+    private final String SEARCH_TITLE = "search";
+    private final String SETTINGS_TITLE = "settings";
+    private View MENU_INDICATOR;
+    private View SEARCH_INDICATOR;
+    private View SETTINGS_INDICATOR;
+
+    private void setButtonsToDark() {
+        menu.setIcon(R.drawable.menu_dark);
+        add.setIcon(R.drawable.add_dark);
+        search.setIcon(R.drawable.search_dark);
+        settings.setIcon(R.drawable.settings_dark);
+    }
+
+    private void setIndicatorsToDark() {
+        MENU_INDICATOR.setVisibility(View.VISIBLE);
+        SEARCH_INDICATOR.setVisibility(View.VISIBLE);
+        SETTINGS_INDICATOR.setVisibility(View.VISIBLE);
+    }
+
+    private boolean toggleMenuPressed(String itemPressed){
+        boolean openWindow = true;
+
+        //set all of the icons and windowIndicators to dark
+        setButtonsToDark();
+        setIndicatorsToDark();
+
+        //if the currently active menu is pressed, hide it
+        if(activeMenu.equals(itemPressed)){
+            activeMenu = "";
+            openWindow = false;
+        }else{
+            //otherwise, set the new item pressed and turn on the icon
+            activeMenu = itemPressed;
+            //TODO - Swap appropriate fragmemnt
+            switch (itemPressed){
+                case MENU_TITLE:
+                    menu.setIcon(R.drawable.menu_light);
+                    MENU_INDICATOR.setVisibility(View.INVISIBLE);
+                    break;
+                case ADD_TITLE:
+                    add.setIcon(R.drawable.add_light);
+                    openWindow = false;
+                    break;
+                case SEARCH_TITLE:
+                    search.setIcon(R.drawable.search_light);
+                    SEARCH_INDICATOR.setVisibility(View.INVISIBLE);
+                    break;
+                case SETTINGS_TITLE:
+                    settings.setIcon(R.drawable.settings_light);
+                    SETTINGS_INDICATOR.setVisibility(View.INVISIBLE);
+                    break;
+            }
         }
         return openWindow;
+    }
+
+    private void toggleNotify(){
+        mNotifyIsOn = !mNotifyIsOn;
+        add.setIcon(R.drawable.add_dark);
+        activeMenu = "";
+        notify.setIcon(mNotifyIsOn ? R.drawable.notify_light : R.drawable.notify_dark);
     }
 
     @Override
@@ -126,10 +128,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         setupEvenlyDistributedToolbar();
-         //Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        //Obtain the SupportMapFragment and get notified when the map is ready to be used.
 
         view =  findViewById(R.id.popupWindow);
         ViewTreeObserver viewTreeObserver = view.getViewTreeObserver();
@@ -144,24 +143,100 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
         }
+        if (!canAccessLocation() || !canAccessContacts()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(INITIAL_PERMS, 1);
+            }
+        }else{
+            initMaps();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        initMaps();
+    }
+
+    private void initMaps() {
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+
+    private boolean canAccessLocation() {
+        return(hasPermission(Manifest.permission.ACCESS_FINE_LOCATION));
+    }
+
+    private boolean canAccessCamera() {
+        return(hasPermission(Manifest.permission.CAMERA));
+    }
+
+    private boolean canAccessContacts() {
+        return(hasPermission(Manifest.permission.READ_CONTACTS));
     }
 
 
+    private boolean hasPermission(String perm) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return(PackageManager.PERMISSION_GRANTED==checkSelfPermission(perm));
+        }
+        return true;
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.bottom_bar_menu, menu);
         this.mMenu = menu;
+
+        this.menu = mMenu.getItem(0);
+        this.add = mMenu.getItem(1);
+        this.notify = mMenu.getItem(2);
+        this.search = mMenu.getItem(3);
+        this.settings = mMenu.getItem(4);
+
+        MENU_INDICATOR = findViewById(R.id.menu_indicator_0);
+        SEARCH_INDICATOR = findViewById(R.id.menu_indicator_3);
+        SETTINGS_INDICATOR = findViewById(R.id.menu_indicator_4);
+
         return super.onCreateOptionsMenu(menu);
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
         // returns true if the user is wanted to open a window
-        if(setLights(item.getTitle().toString())) {
-            //////////////
-            expand(view);
-        }else{
-            collapse(view);
+        if(item == this.notify){
+            toggleNotify();
+        } else {
+            if(toggleMenuPressed(item.getTitle().toString()) && item != this.add){
+                if(!item.getTitle().toString().equals(activeMenu)) {
+                    // WHY AM I NOT GETTING HERE??????
+                    System.err.println("GOT HERE");
+                    collapse(view);
+                    expand(view);
+                }
+                else {
+                    collapse(view);
+                    Handler handler = new Handler();
+                    // this is only here because i can't get into the above area
+                    handler.postDelayed(new Runnable() {
+                        public void run() {
+                            expand(view);
+                        }
+                    }, 350);
+                    goToLocation(user);
+                }
+            } else {
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    public void run() {
+                        goToLocation(user);
+                    }
+                }, 300);
+                activeMenu = "";
+                setIndicatorsToDark();
+                collapse(view);
+            }
         }
         return super.onOptionsItemSelected(item);
     }
@@ -188,9 +263,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // 1dp/ms
         float density =  v.getContext().getResources().getDisplayMetrics().density;
-        a.setDuration(500);
+        a.setDuration(250);
         a.setInterpolator(new LinearInterpolator());
         v.startAnimation(a);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(activeMenu.length()<2)
+            super.onBackPressed();
+        else {
+            goToLocation(user);
+            activeMenu = "";
+            setIndicatorsToDark();
+            collapse(view);
+        }
     }
 
     public static void collapse(final View v) {
@@ -215,7 +302,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         // 1dp/ms
-        a.setDuration((int)(initialHeight / v.getContext().getResources().getDisplayMetrics().density));
+        a.setDuration(250);
+        //a.setDuration((int)(initialHeight / v.getContext().getResources().getDisplayMetrics().density));
         v.startAnimation(a);
     }
 
@@ -278,9 +366,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Location userLocation = locationManager.getLastKnownLocation(provider);
             double lat = userLocation.getLatitude();
             double lng = userLocation.getLongitude();
-            LatLng latLng = new LatLng(lat, lng);
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+            user = new LatLng(lat, lng);
+            goToLocation(user);
         } catch (SecurityException e) {
             System.err.println("MapsActivity.onMapReady() -- caught SecurityException");
         }
@@ -290,8 +377,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onLocationChanged(Location location) {
         double lat = location.getLatitude();
         double lng = location.getLongitude();
-        LatLng latLng = new LatLng(lat, lng);
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        user = new LatLng(lat, lng);
+        goToLocation(user);
+    }
+
+    private void goToLocation(LatLng location) {
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(location));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
     }
 }
