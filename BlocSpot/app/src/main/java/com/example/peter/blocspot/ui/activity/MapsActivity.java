@@ -45,7 +45,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LatLng user;
     private LatLng targetPOI;
 
-    public static int targetHeight = 0;
+    private static int targetHeight = 0;
 
     private boolean mNotifyIsOn, windowIsOpen;
 
@@ -215,7 +215,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Handler handler = new Handler();
                     handler.postDelayed(new Runnable() {
                         public void run() {
-                            BlocSpotAnimator.expand(view);
+                            BlocSpotAnimator.expand(view, targetHeight);
                         }
                     }, 350);
                     offsetCenterMapOnPoint(user, SLOWER_CAMERA_SPEED);
@@ -224,7 +224,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 else {
                     System.out.println("HURR DURR");
                     offsetCenterMapOnPoint(user, STANDARD_CAMERA_SPEED);
-                    BlocSpotAnimator.expand(view);
+                    BlocSpotAnimator.expand(view, targetHeight);
                     windowIsOpen = true;
                 }
             } else {
