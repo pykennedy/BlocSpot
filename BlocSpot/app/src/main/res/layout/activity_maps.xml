@@ -3,6 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:map="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
@@ -10,8 +14,8 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".ui.activity.MapsActivity"
-        android:layout_above="@+id/popupWindow"/>
+        android:layout_marginBottom="?attr/actionBarSize"
+        tools:context=".ui.activity.MapsActivity"/>
 
     <LinearLayout
         android:id="@+id/popupWindow"
@@ -19,7 +23,8 @@
         android:layout_height="350dp"
         android:orientation="vertical"
         android:visibility="invisible"
-        android:layout_above="@+id/tb_maps_activity">
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="?attr/actionBarSize">
         <View
             android:layout_width="match_parent"
             android:layout_height="2dp"
@@ -77,6 +82,7 @@
 
     </LinearLayout>
 
+    </FrameLayout>
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/tb_maps_activity"

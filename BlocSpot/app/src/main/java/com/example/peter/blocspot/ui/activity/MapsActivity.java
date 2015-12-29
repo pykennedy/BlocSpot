@@ -49,7 +49,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     static int targetHeight = 0;
 
-    private boolean mNotifyIsOn;
+    private boolean mNotifyIsOn, windowIsOpen;
 
     private MenuItem menu, add, notify, search, settings;
     //used for determining which menu item is active
@@ -62,6 +62,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private View MENU_INDICATOR;
     private View SEARCH_INDICATOR;
     private View SETTINGS_INDICATOR;
+
+    private final int STANDARD_CAMERA_SPEED = 400;
+    private final int SLOWER_CAMERA_SPEED = 700;
 
     private void setButtonsToDark() {
         menu.setIcon(R.drawable.menu_dark);
@@ -97,6 +100,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     MENU_INDICATOR.setVisibility(View.INVISIBLE);
                     break;
                 case ADD_TITLE:
+                    activeMenu = "";
                     add.setIcon(R.drawable.add_light);
                     openWindow = false;
                     break;
@@ -204,38 +208,33 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        // returns true if the user is wanted to open a window
         if(item == this.notify){
             toggleNotify();
         } else {
             if(toggleMenuPressed(item.getTitle().toString()) && item != this.add){
-                if(!item.getTitle().toString().equals(activeMenu)) {
-                    // WHY AM I NOT GETTING HERE??????
-                    System.err.println("GOT HERE");
-                    collapse(view);
-                    expand(view);
-                }
-                else {
+                if(windowIsOpen) {
                     collapse(view);
                     Handler handler = new Handler();
-                    // this is only here because i can't get into the above area
                     handler.postDelayed(new Runnable() {
                         public void run() {
                             expand(view);
                         }
                     }, 350);
-                    goToLocation(user);
+                    offsetCenterMapOnPoint(user, SLOWER_CAMERA_SPEED);
+                    windowIsOpen = true;
+                }
+                else {
+                    System.out.println("HURR DURR");
+                    offsetCenterMapOnPoint(user, STANDARD_CAMERA_SPEED);
+                    expand(view);
+                    windowIsOpen = true;
                 }
             } else {
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    public void run() {
-                        goToLocation(user);
-                    }
-                }, 300);
+                centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
                 activeMenu = "";
                 setIndicatorsToDark();
                 collapse(view);
+                windowIsOpen = false;
             }
         }
         return super.onOptionsItemSelected(item);
@@ -273,7 +272,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(activeMenu.length()<2)
             super.onBackPressed();
         else {
-            goToLocation(user);
+            centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
             activeMenu = "";
             setIndicatorsToDark();
             collapse(view);
@@ -367,7 +366,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             double lat = userLocation.getLatitude();
             double lng = userLocation.getLongitude();
             user = new LatLng(lat, lng);
-            goToLocation(user);
+            centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
         } catch (SecurityException e) {
             System.err.println("MapsActivity.onMapReady() -- caught SecurityException");
         }
@@ -378,11 +377,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         double lat = location.getLatitude();
         double lng = location.getLongitude();
         user = new LatLng(lat, lng);
-        goToLocation(user);
+        centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
     }
 
-    private void goToLocation(LatLng location) {
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(location));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+    private void centerMapOnPoint(LatLng location, int speed) {
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 17), speed, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                // do nothing i dont care i hope this works
+            }
+
+            @Override
+            public void onCancel() {
+                // do nothing i dont care i hope this works
+            }
+        });
+    }
+    private void offsetCenterMapOnPoint(LatLng location, int speed) {
+        LatLng temp = new LatLng(location.latitude - 0.0014, location.longitude);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 17), speed, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                // do nothing i dont care i hope this works
+            }
+
+            @Override
+            public void onCancel() {
+                // do nothing i dont care i hope this works
+            }
+        });
     }
 }
