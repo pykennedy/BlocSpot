@@ -28,9 +28,13 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener,
+                            GoogleMap.OnMapClickListener, GoogleMap.OnMarkerClickListener {
 
     private static final String[] INITIAL_PERMS={
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -47,7 +51,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private static int targetHeight = 0;
 
-    private boolean mNotifyIsOn, windowIsOpen;
+    private boolean mNotifyIsOn, mIntentToAdd, windowIsOpen;
 
     private MenuItem menu, add, notify, search, settings;
     //used for determining which menu item is active
@@ -83,6 +87,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //set all of the icons and windowIndicators to dark
         setButtonsToDark();
         setIndicatorsToDark();
+        mIntentToAdd = false;
 
         //if the currently active menu is pressed, hide it
         if(activeMenu.equals(itemPressed)){
@@ -96,11 +101,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case MENU_TITLE:
                     menu.setIcon(R.drawable.menu_light);
                     MENU_INDICATOR.setVisibility(View.INVISIBLE);
-                    break;
-                case ADD_TITLE:
-                    activeMenu = "";
-                    add.setIcon(R.drawable.add_light);
-                    openWindow = false;
                     break;
                 case SEARCH_TITLE:
                     search.setIcon(R.drawable.search_light);
@@ -118,8 +118,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void toggleNotify(){
         mNotifyIsOn = !mNotifyIsOn;
         add.setIcon(R.drawable.add_dark);
+        mIntentToAdd = false;
         activeMenu = "";
         notify.setIcon(mNotifyIsOn ? R.drawable.notify_light : R.drawable.notify_dark);
+    }
+
+    private void toggleAdd() {
+        mIntentToAdd = !mIntentToAdd;
+        activeMenu = "";
+        setIndicatorsToDark();
+        setButtonsToDark();
+        add.setIcon(mIntentToAdd ? R.drawable.add_light : R.drawable.add_dark);
     }
 
     @Override
@@ -208,8 +217,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onOptionsItemSelected(MenuItem item) {
         if(item == this.notify){
             toggleNotify();
+        } else if (item == this.add) {
+            toggleAdd();
+            if(windowIsOpen) {
+                BlocSpotAnimator.collapse(view);
+                centerMapOnPoint(user, targetHeight);
+                windowIsOpen = false;
+            }
         } else {
-            if(toggleMenuPressed(item.getTitle().toString()) && item != this.add){
+            if(toggleMenuPressed(item.getTitle().toString())){
                 if(windowIsOpen) {
                     BlocSpotAnimator.collapse(view);
                     Handler handler = new Handler();
@@ -222,7 +238,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     windowIsOpen = true;
                 }
                 else {
-                    System.out.println("HURR DURR");
                     offsetCenterMapOnPoint(user, STANDARD_CAMERA_SPEED);
                     BlocSpotAnimator.expand(view, targetHeight);
                     windowIsOpen = true;
@@ -301,6 +316,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMarkerClickListener(this);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
@@ -338,7 +355,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
     private void offsetCenterMapOnPoint(LatLng location, int speed) {
-        LatLng temp = new LatLng(location.latitude - 0.0014, location.longitude);
+        double offset = (location == user) ? 0.0014 : 0.0012;
+        LatLng temp = new LatLng(location.latitude - offset, location.longitude);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 17), speed, new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
@@ -350,5 +368,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // do nothing i dont care i hope this works
             }
         });
+    }
+
+    @Override
+    public void onMapClick(LatLng position) {
+        targetPOI = position;
+        if(mIntentToAdd) {
+            mMap.addMarker(new MarkerOptions()
+                    .position(position)
+                    .title("temporary")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            toggleAdd();
+            offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
+            BlocSpotAnimator.expand(view, targetHeight);
+            windowIsOpen = true;
+        }
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        return false;
     }
 }
