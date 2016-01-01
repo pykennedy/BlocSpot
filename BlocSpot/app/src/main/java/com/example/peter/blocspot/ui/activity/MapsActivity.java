@@ -23,6 +23,8 @@ import android.widget.ActionMenuView;
 
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
+import com.example.peter.blocspot.ui.fragment.MarkerPopup;
+import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -45,6 +47,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Menu mMenu;
     private Toolbar mToolbar;
     View view;
+    private MarkerPopup markerPopup;
 
     private LatLng user;
     private LatLng targetPOI;
@@ -58,7 +61,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String activeMenu = "";
 
     private final String MENU_TITLE = "menu";
-    private final String ADD_TITLE = "add";
     private final String SEARCH_TITLE = "search";
     private final String SETTINGS_TITLE = "settings";
     private View MENU_INDICATOR;
@@ -318,6 +320,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerClickListener(this);
+
+        markerPopup = new MarkerPopup(getLayoutInflater());
+        mMap.setInfoWindowAdapter(markerPopup);
+
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
@@ -374,10 +380,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapClick(LatLng position) {
         targetPOI = position;
         if(mIntentToAdd) {
-            mMap.addMarker(new MarkerOptions()
+            Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(position)
                     .title("temporary")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            // fragment logic
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.popupContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker))
+                    .commit();
+            // fragment logic end
+
             toggleAdd();
             offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
             BlocSpotAnimator.expand(view, targetHeight);
@@ -387,6 +399,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        markerPopup.getInfoWindow(marker);
+
+        //  not sure how to change the popup to be unique to each marker?
+
         return false;
     }
 }
