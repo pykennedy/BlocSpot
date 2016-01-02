@@ -8,12 +8,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/add_dark"
+        android:background="@null"
         android:layout_gravity="start|center_vertical"/>
 
     <TextView
         android:id="@+id/popup_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingLeft="2dp"
+        android:paddingRight="2dp"
+        android:textColor="@color/blueGrey_900"
         android:text="No Name"
         android:layout_gravity="center|center_vertical"/>
 
@@ -21,6 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/search_dark"
+        android:background="@null"
         android:layout_gravity="end|center_vertical"/>
 
 </LinearLayout>
