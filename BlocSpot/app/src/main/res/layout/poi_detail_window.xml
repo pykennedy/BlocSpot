@@ -4,46 +4,50 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
-        android:id="@+id/poi_detail_title"
+    <RelativeLayout
+        android:id="@+id/poi_detail_title_box"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:orientation="horizontal"
         android:layout_alignParentTop="true"
-        android:background="@color/blueGrey_50"
-        android:paddingLeft="2dp"
+        android:orientation="horizontal"
+        android:layout_height="45dp">
+    <EditText
+        android:id="@+id/poi_detail_title"
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        android:paddingTop="0dp"
+        android:paddingBottom="0dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
         android:layout_marginBottom="2dp"
         android:layout_marginLeft="4dp"
+        android:layout_marginRight="47dp"
         android:layout_marginTop="4dp"
-        android:layout_marginRight="4dp"
-        android:elevation="2dp">
-        <EditText
-            android:id="@+id/poi_detail_title_text"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp"
-            android:layout_gravity="center_vertical"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight=".8"
-            android:textSize="30sp"
-            android:textColor="@color/blueGrey_900"
-            android:hint="@string/poi_detail_window_title_hint"/>
-        <Button
-            android:id="@+id/poi_detail_title_button"
-            android:layout_width="85dp"
-            android:layout_height="30dp"
-            android:layout_weight=".2"
-            android:layout_marginEnd="5dp"
-            android:textColor="@color/blueGrey_50"
-            android:background="@color/colorPrimary"
-            android:layout_gravity="center_vertical"
-            android:text="Enter"/>
-    </LinearLayout>
+        android:layout_gravity="center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
 
+        android:background="@color/blueGrey_50"
+        android:textSize="30sp"
+        android:textColor="@color/blueGrey_900"
+        android:elevation="2dp"
+        android:hint="@string/poi_detail_window_title_hint"/>
+
+    <CheckBox
+        android:id="@+id/poi_detail_viewed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="9dp"
+        android:layout_alignParentRight="true"
+        android:background="@color/blueGrey_50"
+        android:elevation="2dp"
+        android:button="@drawable/viewed_checkbox"/>
+    </RelativeLayout>
 
     <Spinner
         android:id="@+id/poi_detail_category_dropdown"
-        android:layout_below="@+id/poi_detail_title"
+        android:layout_below="@+id/poi_detail_title_box"
         android:layout_width="match_parent"
         android:layout_height="45dp"
         android:entries="@array/categories"
@@ -58,12 +62,11 @@
         android:dropDownHeight="400dp"
         android:elevation="2dp"/>
 
-    <EditText
+    <com.example.peter.blocspot.customViews.EditTextWithDone
         android:id="@+id/poi_detail_notes"
         android:layout_below="@+id/poi_detail_category_dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textMultiLine"
         android:hint="@string/poi_detail_window_notes_hint"
         android:background="@color/blueGrey_50"
         android:gravity="top"
@@ -88,6 +91,7 @@
         android:layout_alignParentBottom="true">
 
         <Button
+            android:id="@+id/poi_detail_delete"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:layout_marginEnd="20dp"
@@ -96,6 +100,7 @@
             android:elevation="2dp"
             android:text="Delete" />
         <Button
+            android:id="@+id/poi_detail_save"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:layout_marginEnd="20dp"
@@ -104,6 +109,7 @@
             android:elevation="2dp"
             android:text="Save" />
         <Button
+            android:id="@+id/poi_detail_cancel"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:textColor="@color/blueGrey_50"

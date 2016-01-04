@@ -46,15 +46,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private Menu mMenu;
     private Toolbar mToolbar;
-    View view;
+    static View view;
     private MarkerPopup markerPopup;
+    private Marker pendingMarker;
 
     private LatLng user;
     private LatLng targetPOI;
 
     private static int targetHeight = 0;
 
-    private boolean mNotifyIsOn, mIntentToAdd, windowIsOpen;
+    private boolean mNotifyIsOn, mIntentToAdd, windowIsOpen, poiDetailsOpen;
 
     private MenuItem menu, add, notify, search, settings;
     //used for determining which menu item is active
@@ -190,7 +191,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return(hasPermission(Manifest.permission.READ_CONTACTS));
     }
 
-
     private boolean hasPermission(String perm) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return(PackageManager.PERMISSION_GRANTED==checkSelfPermission(perm));
@@ -257,13 +257,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onBackPressed() {
-        if(activeMenu.length()<2)
+        if(activeMenu.length()<2 && !windowIsOpen)
             super.onBackPressed();
         else {
+            if(pendingMarker!=null)
+                pendingMarker.remove();
             centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
             activeMenu = "";
             setIndicatorsToDark();
             BlocSpotAnimator.collapse(view);
+            windowIsOpen=false;
         }
     }
 
@@ -280,7 +283,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Add 10 spacing on either side of the toolbar
         mToolbar.setContentInsetsAbsolute(10, 10);
-
         // Get the ChildCount of your Toolbar, this should only be 1
         int childCount = mToolbar.getChildCount();
         // Get the Screen Width in pixels
@@ -384,12 +386,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .position(position)
                     .title("temporary")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            pendingMarker = marker;
             // fragment logic
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.popupContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker))
+                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker))
                     .commit();
             // fragment logic end
-
             toggleAdd();
             offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
             BlocSpotAnimator.expand(view, targetHeight);
@@ -399,10 +401,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        markerPopup.getInfoWindow(marker);
+        targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+        if(windowIsOpen) {
+            BlocSpotAnimator.collapse(view);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker))
+                    .commit();
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    BlocSpotAnimator.expand(view, targetHeight);
+                }
+            }, 350);
+            offsetCenterMapOnPoint(targetPOI, SLOWER_CAMERA_SPEED);
+            windowIsOpen = true;
+        }
+        else {
+            offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
+            BlocSpotAnimator.expand(view, targetHeight);
+            windowIsOpen = true;
+        }
 
-        //  not sure how to change the popup to be unique to each marker?
-
-        return false;
+        return true;
+    }
+    public static View getCurrentWindow() {
+        return view;
     }
 }

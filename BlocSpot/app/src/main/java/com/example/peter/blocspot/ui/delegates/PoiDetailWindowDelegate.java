@@ -1,17 +1,11 @@
 package com.example.peter.blocspot.ui.delegates;
 
+import com.example.peter.blocspot.ui.activity.MapsActivity;
+import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.google.android.gms.maps.model.Marker;
 
-/**
- * Created by Peter on 1/2/2016.
- */
 public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
-
-    @Override
-    public void onEnterClicked(String poiTitle) {
-        System.out.println(poiTitle);
-    }
 
     @Override
     public void onDeleteClicked(Marker marker) {
@@ -24,7 +18,8 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
     }
 
     @Override
-    public void onCancelClicked() {
-
+    public void onCancelClicked(Marker marker) {
+        marker.remove();
+        BlocSpotAnimator.collapse(MapsActivity.getCurrentWindow());
     }
 }
