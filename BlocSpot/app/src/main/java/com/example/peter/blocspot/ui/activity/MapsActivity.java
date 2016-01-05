@@ -23,6 +23,7 @@ import android.widget.ActionMenuView;
 
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
+import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MarkerPopup;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.google.android.gms.location.LocationListener;
@@ -49,6 +50,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     static View view;
     private MarkerPopup markerPopup;
     private Marker pendingMarker;
+    private PoiDetailWindow poiDetailWindow;
+    private int fragmentIDGenerator = 0;
 
     private LatLng user;
     private LatLng targetPOI;
@@ -143,7 +146,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         setupEvenlyDistributedToolbar();
         //Obtain the SupportMapFragment and get notified when the map is ready to be used.
-
         view =  findViewById(R.id.popupWindow);
         ViewTreeObserver viewTreeObserver = view.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
@@ -389,8 +391,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             pendingMarker = marker;
             // fragment logic
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker))
+                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker), String.valueOf("addPOI"))
                     .commit();
+            getSupportFragmentManager().executePendingTransactions();
+            poiDetailWindow = (PoiDetailWindow)getSupportFragmentManager().findFragmentById(R.id.popupWindowContent);
+            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
             // fragment logic end
             toggleAdd();
             offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
@@ -405,8 +410,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(windowIsOpen) {
             BlocSpotAnimator.collapse(view);
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker))
+                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker), String.valueOf("markerClicked"))
                     .commit();
+            getSupportFragmentManager().executePendingTransactions();
+            poiDetailWindow = (PoiDetailWindow)getSupportFragmentManager().findFragmentByTag(String.valueOf("markerClicked"));
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 public void run() {
