@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.peter.blocspot.R;
+import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.google.android.gms.maps.model.Marker;
 
 import java.lang.ref.WeakReference;
@@ -49,6 +50,7 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
         // presumably somewhere im going to be using this marker i passed for database stuff
         PoiDetailWindow poiDetailWindow = new PoiDetailWindow();
         currentMarker = marker;
+
         //poiDetailWindow.setModel
 
         return poiDetailWindow;
@@ -59,6 +61,7 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.poi_detail_window, container, false);
+        setDelegate(new PoiDetailWindowDelegate());
 
         title = (EditText) view.findViewById(R.id.poi_detail_title);
         viewed = (CheckBox) view.findViewById(R.id.poi_detail_viewed);
@@ -106,7 +109,7 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
             Toast.makeText(v.getContext(), "save", Toast.LENGTH_LONG).show();
         }
         if(v == cancel) {
-            //getDelegate().onCancelClicked(currentMarker);
+            getDelegate().onCancelClicked(currentMarker);
         }
     }
 }
