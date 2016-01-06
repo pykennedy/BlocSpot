@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.peter.blocspot.R;
+import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.google.android.gms.maps.model.Marker;
 
 import java.lang.ref.WeakReference;
@@ -53,6 +54,8 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
         // presumably somewhere im going to be using this marker i passed for database stuff
         PoiDetailWindow poiDetailWindow = new PoiDetailWindow();
         currentMarker = marker;
+
+        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
 
         //poiDetailWindow.setModel
 

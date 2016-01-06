@@ -7,6 +7,11 @@ import com.google.android.gms.maps.model.Marker;
 
 public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
 
+    /*
+    public PoiDetailWindowDelegate(PoiDetailWindow poiDetailWindow) {
+        poiDetailWindow.setDelegate(this);
+    }
+*/
     @Override
     public void onDeleteClicked(Marker marker) {
 
