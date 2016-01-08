@@ -9,7 +9,6 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
@@ -24,6 +23,7 @@ import android.widget.ActionMenuView;
 
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
+import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MarkerPopup;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.google.android.gms.location.Geofence;
@@ -51,7 +51,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     static View view;
     private MarkerPopup markerPopup;
     private Marker pendingMarker;
-    private PoiDetailWindow poiDetailWindow;
     private int fragmentIDGenerator = 0;
     private Geofence mGeofenceList;
 
@@ -394,14 +393,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
             pendingMarker = marker;
             // fragment logic
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker), String.valueOf("addPOI"))
-                    .commit();
-            getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-            //getSupportFragmentManager().executePendingTransactions();
-            //poiDetailWindow = (PoiDetailWindow)getSupportFragmentManager().findFragmentById(R.id.popupWindowContent);
-            //PoiDetailWindowDelegate poiDetailWindowDelegate = new PoiDetailWindowDelegate(poiDetailWindow);
-            //poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
+            PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
+            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, poiDetailWindow, String.valueOf("addPOI"))
+                            .commit();
             // fragment logic end
             toggleAdd();
             offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
@@ -415,13 +411,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
         if(windowIsOpen) {
             BlocSpotAnimator.collapse(view);
+            PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
+            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.popupWindowContent, PoiDetailWindow.inflateAddPOIMenuWindow(marker), String.valueOf("markerClicked"))
+                    .replace(R.id.popupWindowContent, poiDetailWindow, String.valueOf("markerClicked"))
                     .commit();
-            getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-            //getSupportFragmentManager().executePendingTransactions();
-            //poiDetailWindow = (PoiDetailWindow)getSupportFragmentManager().findFragmentByTag(String.valueOf("markerClicked"));
-            //PoiDetailWindowDelegate poiDetailWindowDelegate = new PoiDetailWindowDelegate(poiDetailWindow);
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 public void run() {

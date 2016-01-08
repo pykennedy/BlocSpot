@@ -17,11 +17,9 @@ import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.google.android.gms.maps.model.Marker;
 
-import java.lang.ref.WeakReference;
-
 public class PoiDetailWindow extends Fragment implements View.OnClickListener {
 
-    private WeakReference<Delegate> delegate;
+    private PoiDetailWindowDelegate delegate;
     private View view;
     private Button delete, save, cancel;
     private CheckBox viewed;
@@ -43,11 +41,11 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
         if (delegate == null) {
             return null;
         }
-        return delegate.get();
+        return delegate;
     }
 
     public void setDelegate(Delegate delegate) {
-        this.delegate = new WeakReference<Delegate>(delegate);
+        this.delegate = new PoiDetailWindowDelegate();
     }
 
     public static PoiDetailWindow inflateAddPOIMenuWindow (Marker marker) {
@@ -55,7 +53,7 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
         PoiDetailWindow poiDetailWindow = new PoiDetailWindow();
         currentMarker = marker;
 
-        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
+        //poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
 
         //poiDetailWindow.setModel
 
