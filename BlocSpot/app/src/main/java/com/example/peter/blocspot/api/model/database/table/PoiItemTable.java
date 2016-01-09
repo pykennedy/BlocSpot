@@ -30,24 +30,32 @@ public class PoiItemTable extends Table {
             return this;
         }
 
-        public Builder setLongitude(String longitude) {
-            values.put(COLUMN_LONGITUDE, longitude);
+        public Builder setLongitude(double longitude) {
+            values.put(COLUMN_LONGITUDE, Double.toString(longitude));
             return this;
         }
 
-        public Builder setLatitude(String latitude) {
-            values.put(COLUMN_LATITUDE, latitude);
+        public Builder setLatitude(double latitude) {
+            values.put(COLUMN_LATITUDE, Double.toString(latitude));
             return this;
         }
 
-        public Builder setViewed(long viewed) {
-            values.put(COLUMN_NOTES, viewed);
+        public Builder setViewed(boolean viewed) {
+            values.put(COLUMN_VIEWED, viewed ? 1 : 0);
             return this;
         }
 
         @Override
         public long insert(SQLiteDatabase writableDB) {
             return writableDB.insert(NAME, null, values);
+        }
+
+        public void update(SQLiteDatabase writableDB, long id) {
+            writableDB.update(NAME, values, "ID = ?", new String[] { Long.toString(id) });
+        }
+
+        public void remove(SQLiteDatabase writableDB, long id) {
+            writableDB.delete(NAME, "ID = ?", new String[]{Long.toString(id)});
         }
     }
 
@@ -71,7 +79,7 @@ public class PoiItemTable extends Table {
 
     @Override
     public String getName() {
-        return "poi_item_table";
+        return NAME;
     }
 
     @Override
@@ -94,4 +102,7 @@ public class PoiItemTable extends Table {
     public static String getLongitude(Cursor cursor) { return getString(cursor, COLUMN_LONGITUDE); }
     public static String getLatitude(Cursor cursor) { return getString(cursor, COLUMN_LATITUDE); }
     public static boolean getViewed(Cursor cursor) { return getBoolean(cursor, COLUMN_VIEWED); }
+    public Cursor fetchAllItems(SQLiteDatabase readonlyDatabase) {
+        return readonlyDatabase.rawQuery("SELECT * FROM " + NAME, null);
+    }
 }

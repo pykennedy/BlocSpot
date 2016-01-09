@@ -5,13 +5,13 @@ public class PoiItem {
     private String name;
     private String category;
     private String notes;
-    private int id;
+    private long id = -1;
     private double longitude;
     private double latitude;
     private boolean viewed;
 
     public PoiItem(String titleID, String name, String category, String notes,
-                   int id, double longitude, double latitude, boolean viewed) {
+                   long id, double longitude, double latitude, boolean viewed) {
         this.titleID = titleID;
         this.name = name;
         this.category = category;
@@ -38,7 +38,7 @@ public class PoiItem {
         return notes;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -70,7 +70,7 @@ public class PoiItem {
         this.notes = notes;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 

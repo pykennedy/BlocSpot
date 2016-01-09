@@ -10,6 +10,7 @@ public abstract class Table {
     }
 
     protected static final String COLUMN_ID = "id";
+    protected static final String COLUMN_TITLEID = "titleID";
     public abstract String getName();
     public abstract String getCreateStatement();
 
@@ -18,7 +19,12 @@ public abstract class Table {
 
     public Cursor fetchRow(SQLiteDatabase readonlyDatabase, long rowId) {
         return readonlyDatabase.query(true, getName(), null, COLUMN_ID + " = ?",
-                new String[] {String.valueOf(rowId)}, null, null, null, null);
+                new String[] {Long.toString(rowId)}, null, null, null, null);
+    }
+
+    public Cursor fetchRowFromMarkerID(SQLiteDatabase readonlyDatabase, String titleID) {
+        return readonlyDatabase.query(true, getName(), null, COLUMN_TITLEID + " = ?",
+                new String[] {titleID}, null, null, null, null);
     }
 
     protected static String getString(Cursor cursor, String column) {

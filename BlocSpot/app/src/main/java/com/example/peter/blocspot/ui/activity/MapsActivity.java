@@ -3,6 +3,7 @@ package com.example.peter.blocspot.ui.activity;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -21,7 +22,10 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ActionMenuView;
 
+import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.R;
+import com.example.peter.blocspot.api.DataSource;
+import com.example.peter.blocspot.api.model.PoiItem;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MarkerPopup;
@@ -335,7 +339,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
         try {
-            System.out.println("GOT TO ATTEMPTING CAMERA SHIFT");
             Location userLocation = locationManager.getLastKnownLocation(provider);
             double lat = userLocation.getLatitude();
             double lng = userLocation.getLongitude();
@@ -343,6 +346,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
         } catch (SecurityException e) {
             System.err.println("MapsActivity.onMapReady() -- caught SecurityException");
+        }
+        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
+        Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
+                dataSource.getDatabaseOpenHelper().getReadableDatabase());
+        if (cursor.moveToFirst()) {
+            do {
+                PoiItem poiItem = DataSource.itemFromCursor(cursor);
+                mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
+                .title(poiItem.getTitleID()));
+                System.out.println(poiItem.getTitleID() +" "+ poiItem.getCategory() +" "+ poiItem.getCategory()
+                        +" "+ poiItem.getName() +" "+ poiItem.getNotes() +" "+ poiItem.getId());
+            } while (cursor.moveToNext());
+            cursor.close();
         }
     }
 
@@ -389,14 +406,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(mIntentToAdd) {
             Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(position)
-                    .title("temporary")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
             pendingMarker = marker;
             // fragment logic
             PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
             poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.popupWindowContent, poiDetailWindow, String.valueOf("addPOI"))
+                            .replace(R.id.popupWindowContent, poiDetailWindow)
                             .commit();
             // fragment logic end
             toggleAdd();
@@ -409,12 +425,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onMarkerClick(Marker marker) {
         targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+        PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
+        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
         if(windowIsOpen) {
             BlocSpotAnimator.collapse(view);
-            PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
-            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
+
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.popupWindowContent, poiDetailWindow, String.valueOf("markerClicked"))
+                    .replace(R.id.popupWindowContent, poiDetailWindow)
                     .commit();
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
@@ -426,11 +443,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             windowIsOpen = true;
         }
         else {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.popupWindowContent, poiDetailWindow)
+                    .commit();
             offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
             BlocSpotAnimator.expand(view, targetHeight);
             windowIsOpen = true;
         }
-
         return true;
     }
     public static View getCurrentWindow() {
