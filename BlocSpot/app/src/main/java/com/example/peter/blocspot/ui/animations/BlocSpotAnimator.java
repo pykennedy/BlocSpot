@@ -5,6 +5,11 @@ import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.Transformation;
 
+import com.example.peter.blocspot.ui.activity.MapsActivity;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
+
 public class BlocSpotAnimator {
     public static void expand(final View v, int targetHeight) {
         final int tempHeight = targetHeight;
@@ -58,5 +63,25 @@ public class BlocSpotAnimator {
         a.setDuration(250);
         //a.setDuration((int)(initialHeight / v.getContext().getResources().getDisplayMetrics().density));
         v.startAnimation(a);
+    }
+    public static void centerMapOnPoint(LatLng location, int speed, GoogleMap mMap) {
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 17), speed, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {}
+
+            @Override
+            public void onCancel() {}
+        });
+    }
+    public static void offsetCenterMapOnPoint(LatLng location, int speed, GoogleMap mMap) {
+        double offset = (location == MapsActivity.user) ? 0.0014 : 0.0012;
+        LatLng temp = new LatLng(location.latitude - offset, location.longitude);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 17), speed, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {}
+
+            @Override
+            public void onCancel() {}
+        });
     }
 }

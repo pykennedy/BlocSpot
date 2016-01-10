@@ -32,7 +32,6 @@ import com.example.peter.blocspot.ui.fragment.MarkerPopup;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -54,11 +53,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Toolbar mToolbar;
     static View view;
     private MarkerPopup markerPopup;
-    private Marker pendingMarker;
+    public static Marker pendingMarker;
     private int fragmentIDGenerator = 0;
     private Geofence mGeofenceList;
 
-    private LatLng user;
+    public static LatLng user;
     private LatLng targetPOI;
 
     private static int targetHeight = 0;
@@ -76,8 +75,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private View SEARCH_INDICATOR;
     private View SETTINGS_INDICATOR;
 
-    private final int STANDARD_CAMERA_SPEED = 400;
-    private final int SLOWER_CAMERA_SPEED = 700;
+    public static final int STANDARD_CAMERA_SPEED = 400;
+    private static final int SLOWER_CAMERA_SPEED = 700;
 
     private void setButtonsToDark() {
         menu.setIcon(R.drawable.menu_dark);
@@ -232,7 +231,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             toggleAdd();
             if(windowIsOpen) {
                 BlocSpotAnimator.collapse(view);
-                centerMapOnPoint(user, targetHeight);
+                BlocSpotAnimator.centerMapOnPoint(user, targetHeight, mMap);
                 windowIsOpen = false;
             }
         } else {
@@ -245,16 +244,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             BlocSpotAnimator.expand(view, targetHeight);
                         }
                     }, 350);
-                    offsetCenterMapOnPoint(user, SLOWER_CAMERA_SPEED);
+                    BlocSpotAnimator.offsetCenterMapOnPoint(user, SLOWER_CAMERA_SPEED, mMap);
                     windowIsOpen = true;
                 }
                 else {
-                    offsetCenterMapOnPoint(user, STANDARD_CAMERA_SPEED);
+                    BlocSpotAnimator.offsetCenterMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
                     BlocSpotAnimator.expand(view, targetHeight);
                     windowIsOpen = true;
                 }
             } else {
-                centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
+                BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
                 activeMenu = "";
                 setIndicatorsToDark();
                 BlocSpotAnimator.collapse(view);
@@ -269,9 +268,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(activeMenu.length()<2 && !windowIsOpen)
             super.onBackPressed();
         else {
-            if(pendingMarker!=null)
+            if(pendingMarker!=null) {
                 pendingMarker.remove();
-            centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
+                pendingMarker = null;
+            }
+            BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
             activeMenu = "";
             setIndicatorsToDark();
             BlocSpotAnimator.collapse(view);
@@ -343,7 +344,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             double lat = userLocation.getLatitude();
             double lng = userLocation.getLongitude();
             user = new LatLng(lat, lng);
-            centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
+            BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
         } catch (SecurityException e) {
             System.err.println("MapsActivity.onMapReady() -- caught SecurityException");
         }
@@ -368,36 +369,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         double lat = location.getLatitude();
         double lng = location.getLongitude();
         user = new LatLng(lat, lng);
-        centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
-    }
-
-    private void centerMapOnPoint(LatLng location, int speed) {
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 17), speed, new GoogleMap.CancelableCallback() {
-            @Override
-            public void onFinish() {
-                // do nothing i dont care i hope this works
-            }
-
-            @Override
-            public void onCancel() {
-                // do nothing i dont care i hope this works
-            }
-        });
-    }
-    private void offsetCenterMapOnPoint(LatLng location, int speed) {
-        double offset = (location == user) ? 0.0014 : 0.0012;
-        LatLng temp = new LatLng(location.latitude - offset, location.longitude);
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 17), speed, new GoogleMap.CancelableCallback() {
-            @Override
-            public void onFinish() {
-                // do nothing i dont care i hope this works
-            }
-
-            @Override
-            public void onCancel() {
-                // do nothing i dont care i hope this works
-            }
-        });
+        BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
     }
 
     @Override
@@ -407,16 +379,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(position)
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            if(pendingMarker != null)
+                pendingMarker.remove();
             pendingMarker = marker;
             // fragment logic
             PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
-            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
+            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.popupWindowContent, poiDetailWindow)
                             .commit();
             // fragment logic end
             toggleAdd();
-            offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
+            BlocSpotAnimator.offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED, mMap);
             BlocSpotAnimator.expand(view, targetHeight);
             windowIsOpen = true;
         }
@@ -426,7 +400,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onMarkerClick(Marker marker) {
         targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
         PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
-        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
+        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
         if(windowIsOpen) {
             BlocSpotAnimator.collapse(view);
 
@@ -439,14 +413,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     BlocSpotAnimator.expand(view, targetHeight);
                 }
             }, 350);
-            offsetCenterMapOnPoint(targetPOI, SLOWER_CAMERA_SPEED);
+            BlocSpotAnimator.offsetCenterMapOnPoint(targetPOI, SLOWER_CAMERA_SPEED, mMap);
             windowIsOpen = true;
         }
         else {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.popupWindowContent, poiDetailWindow)
                     .commit();
-            offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED);
+            BlocSpotAnimator.offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED, mMap);
             BlocSpotAnimator.expand(view, targetHeight);
             windowIsOpen = true;
         }

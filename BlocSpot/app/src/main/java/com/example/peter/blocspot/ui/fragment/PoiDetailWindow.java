@@ -20,6 +20,7 @@ import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
 
 public class PoiDetailWindow extends Fragment implements View.OnClickListener {
@@ -31,11 +32,12 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     private EditText title, notes;
     private Spinner category;
     private static Marker currentMarker;
+    private GoogleMap mMap;
     //private PoIModel model;
 
     public static interface Delegate {
-        public void onDeleteClicked(Marker marker);
-        public void onSaveClicked(Marker marker, PoiItem poiItem);
+        public void onDeleteClicked(Marker marker, GoogleMap mMap);
+        public void onSaveClicked(Marker marker, PoiItem poiItem, GoogleMap mMap);
         public void onCancelClicked(Marker marker);
     }
 
@@ -50,15 +52,15 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
         return delegate;
     }
 
-    public void setDelegate(Delegate delegate) {
-        this.delegate = new PoiDetailWindowDelegate();
+    public void setDelegate(PoiDetailWindowDelegate delegate, GoogleMap mMap) {
+        this.delegate = delegate;
+        this.mMap = mMap;
     }
 
     public static PoiDetailWindow inflateAddPOIMenuWindow (Marker marker) {
         // presumably somewhere im going to be using this marker i passed for database stuff
         PoiDetailWindow poiDetailWindow = new PoiDetailWindow();
         currentMarker = marker;
-
         //poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
 
         //poiDetailWindow.setModel
@@ -117,19 +119,19 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if(v == delete) {
-            getDelegate().onDeleteClicked(currentMarker);
+            getDelegate().onDeleteClicked(currentMarker, mMap);
         }
         if( v == save) {
            // public PoiItem(String titleID, String name, String category, String notes,
             //long id, double longitude, double latitude, boolean viewed)
             if(currentMarker.getTitle() == null)
                 currentMarker.setTitle(currentMarker.getId());
-            boolean testing123 = viewed.isChecked();
             PoiItem poiItem = new PoiItem(currentMarker.getTitle(), title.getText().toString(),
                     category.getSelectedItem().toString(), notes.getText().toString(),
                     -1, currentMarker.getPosition().longitude,
                     currentMarker.getPosition().latitude, viewed.isChecked());
-            getDelegate().onSaveClicked(currentMarker, poiItem);
+            getDelegate().onSaveClicked(currentMarker, poiItem, mMap);
+
         }
         if(v == cancel) {
             getDelegate().onCancelClicked(currentMarker);
