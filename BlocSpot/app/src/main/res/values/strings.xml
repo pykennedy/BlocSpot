@@ -25,4 +25,17 @@
         <item>Store</item>
         <item>Tourist Attraction</item>
     </string-array>
+    <string-array name="menu_categories">
+        <item>All:</item>
+        <item>Arcades:</item>
+        <item>Bars:</item>
+        <item>Cafes:</item>
+        <item>Hotels:</item>
+        <item>Houses:</item>
+        <item>Parking:</item>
+        <item>Restaurants:</item>
+        <item>Sports Areas:</item>
+        <item>Stores:</item>
+        <item>Tourist Attractions:</item>
+    </string-array>
 </resources>

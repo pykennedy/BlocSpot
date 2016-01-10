@@ -41,10 +41,6 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
         public void onCancelClicked(Marker marker);
     }
 
-    public PoiDetailWindow getPoiDetailWindow() {
-        return this;
-    }
-
     public Delegate getDelegate() {
         if (delegate == null) {
             return null;
@@ -126,7 +122,10 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
             //long id, double longitude, double latitude, boolean viewed)
             if(currentMarker.getTitle() == null)
                 currentMarker.setTitle(currentMarker.getId());
-            PoiItem poiItem = new PoiItem(currentMarker.getTitle(), title.getText().toString(),
+            String name = title.getText().toString();
+            if(name.equals(""))
+                name = "Unnamed POI";
+            PoiItem poiItem = new PoiItem(currentMarker.getTitle(), name,
                     category.getSelectedItem().toString(), notes.getText().toString(),
                     -1, currentMarker.getPosition().longitude,
                     currentMarker.getPosition().latitude, viewed.isChecked());
@@ -139,10 +138,12 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     }
 
     public void loadInfo(PoiItem poiItem) {
-        title.setText(poiItem.getName());
+        if(poiItem.getName().equals("Unnamed POI"))
+            title.setText("");
+        else
+            title.setText(poiItem.getName());
         category.setSelection(getSpinnerPosition(poiItem.getCategory()));
         notes.setText(poiItem.getNotes());
-        boolean testing123 = poiItem.isViewed();
         viewed.setChecked(poiItem.isViewed());
         if(viewed.isChecked())
             System.out.println("ITS CHECKED DUNNO WUTS BROKE");

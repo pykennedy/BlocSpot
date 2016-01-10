@@ -27,8 +27,10 @@ import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
+import com.example.peter.blocspot.ui.delegates.MenuWindowDelegate;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MarkerPopup;
+import com.example.peter.blocspot.ui.fragment.MenuWindow;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationListener;
@@ -111,6 +113,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case MENU_TITLE:
                     menu.setIcon(R.drawable.menu_light);
                     MENU_INDICATOR.setVisibility(View.INVISIBLE);
+                    MenuWindow menuWindow = MenuWindow.inflateMenuWindow();
+                    menuWindow.setDelegate(new MenuWindowDelegate(), mMap);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, menuWindow)
+                            .commit();
                     break;
                 case SEARCH_TITLE:
                     search.setIcon(R.drawable.search_light);

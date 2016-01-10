@@ -33,10 +33,6 @@ public class DataSource {
         }).start();
     }
 
-    public List<PoiItem> getPoiItemList() {
-        return poiItemList;
-    }
-
     public PoiItemTable getPoiItemTable() {
         return poiItemTable;
     }
@@ -52,6 +48,20 @@ public class DataSource {
                 PoiItemTable.getCategory(cursor), PoiItemTable.getNotes(cursor),
                 PoiItemTable.getID(cursor), Double.parseDouble(PoiItemTable.getLongitude(cursor)),
                 Double.parseDouble(PoiItemTable.getLatitude(cursor)), PoiItemTable.getViewed(cursor));
+    }
+
+    public List<PoiItem> getPoiItemList() {
+        ArrayList<PoiItem> poiItems = new ArrayList<>();
+        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
+        Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
+                dataSource.getDatabaseOpenHelper().getReadableDatabase());
+        if (cursor.moveToFirst()) {
+            do {
+                poiItems.add(itemFromCursor(cursor));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return poiItems;
     }
 
     public void savePOI(PoiItem poiItem) {
