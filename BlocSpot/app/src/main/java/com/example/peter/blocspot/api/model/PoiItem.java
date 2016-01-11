@@ -1,5 +1,7 @@
 package com.example.peter.blocspot.api.model;
 
+// add constants for each category name
+
 public class PoiItem {
     private String titleID;
     private String name;

@@ -27,11 +27,10 @@ import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
-import com.example.peter.blocspot.ui.delegates.MenuWindowDelegate;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
-import com.example.peter.blocspot.ui.fragment.MarkerPopup;
 import com.example.peter.blocspot.ui.fragment.MenuWindow;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
+import com.example.peter.blocspot.ui.fragment.SettingsWindow;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.GoogleMap;
@@ -54,7 +53,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Menu mMenu;
     private Toolbar mToolbar;
     static View view;
-    private MarkerPopup markerPopup;
     public static Marker pendingMarker;
     private int fragmentIDGenerator = 0;
     private Geofence mGeofenceList;
@@ -64,11 +62,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private static int targetHeight = 0;
 
-    private boolean mNotifyIsOn, mIntentToAdd, windowIsOpen, poiDetailsOpen;
+    private boolean mNotifyIsOn, mIntentToAdd, poiDetailsOpen;
+    public static boolean windowIsOpen;
 
-    private MenuItem menu, add, notify, search, settings;
+    public static MenuItem menu, add, notify, search, settings;
     //used for determining which menu item is active
-    private String activeMenu = "";
+    public static String activeMenu = "";
 
     private final String MENU_TITLE = "menu";
     private final String SEARCH_TITLE = "search";
@@ -114,7 +113,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     menu.setIcon(R.drawable.menu_light);
                     MENU_INDICATOR.setVisibility(View.INVISIBLE);
                     MenuWindow menuWindow = MenuWindow.inflateMenuWindow();
-                    menuWindow.setDelegate(new MenuWindowDelegate(), mMap);
+                    menuWindow.setMap(mMap);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.popupWindowContent, menuWindow)
                             .commit();
@@ -126,6 +125,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case SETTINGS_TITLE:
                     settings.setIcon(R.drawable.settings_light);
                     SETTINGS_INDICATOR.setVisibility(View.INVISIBLE);
+                    SettingsWindow settingsWindow = SettingsWindow.inflateSettingsWindow();
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, settingsWindow)
+                            .commit();
                     break;
             }
         }
@@ -282,6 +285,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
             activeMenu = "";
             setIndicatorsToDark();
+            setButtonsToDark();
             BlocSpotAnimator.collapse(view);
             windowIsOpen=false;
         }
@@ -339,9 +343,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerClickListener(this);
-
-        markerPopup = new MarkerPopup(getLayoutInflater());
-        mMap.setInfoWindowAdapter(markerPopup);
 
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();

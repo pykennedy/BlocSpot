@@ -13,31 +13,15 @@ import android.widget.Spinner;
 
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.ui.adapter.ItemAdapter;
-import com.example.peter.blocspot.ui.delegates.MenuWindowDelegate;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.Marker;
 
-public class MenuWindow extends Fragment implements View.OnClickListener{
-    private MenuWindowDelegate delegate;
+public class MenuWindow extends Fragment {
     private View view;
     private GoogleMap mMap;
     private ItemAdapter itemAdapter;
     private Spinner category;
 
-    public static interface Delegate {
-        public void onItemClicked(Marker marker, GoogleMap mMap);
-        public void onSpinnerChanged();
-    }
-
-    public Delegate getDelegate() {
-        if (delegate == null) {
-            return null;
-        }
-        return delegate;
-    }
-
-    public void setDelegate(MenuWindowDelegate delegate, GoogleMap mMap) {
-        this.delegate = delegate;
+    public void setMap(GoogleMap mMap) {
         this.mMap = mMap;
     }
 
@@ -55,32 +39,23 @@ public class MenuWindow extends Fragment implements View.OnClickListener{
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 System.out.println(category.getItemAtPosition(position));
-                /*
-                I NEED TO FIGURE OUT HOW TO FILTER OUT MY POI ITEMS IN MY RECYCLER VIEW BASED
-                ON THE CATEGORY THE USER SELECTED... BUT HOW?!?!?!?!?!
-                 */
+                String catString = category.getItemAtPosition(position).toString();
+                if(catString.equals("Category:"))
+                    itemAdapter.setAll();
+                else
+                    itemAdapter.setCategory(catString);
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        itemAdapter = new ItemAdapter();
+        itemAdapter = new ItemAdapter(mMap);
         RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.menu_poi_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(itemAdapter);
 
-
-
-
         return view;
-    }
-
-    @Override
-    public void onClick(View v) {
-
     }
 }

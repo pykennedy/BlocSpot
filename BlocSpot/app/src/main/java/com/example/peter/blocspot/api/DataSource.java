@@ -52,9 +52,7 @@ public class DataSource {
 
     public List<PoiItem> getPoiItemList() {
         ArrayList<PoiItem> poiItems = new ArrayList<>();
-        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
-        Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase());
+        Cursor cursor = getPoiItemTable().fetchAllItems(getDatabaseOpenHelper().getReadableDatabase());
         if (cursor.moveToFirst()) {
             do {
                 poiItems.add(itemFromCursor(cursor));
@@ -86,5 +84,18 @@ public class DataSource {
         PoiItemTable.Builder builder = new PoiItemTable.Builder();
         builder.remove(databaseOpenHelper.getWritableDatabase(), id);
         System.out.println("remove");
+    }
+
+    public List<PoiItem> getPoiByCategory(String category) {
+        ArrayList<PoiItem> poiItems = new ArrayList<>();
+        Cursor cursor = getPoiItemTable().fetchAllPoiWithCategory(
+                getDatabaseOpenHelper().getReadableDatabase(), category);
+        if (cursor.moveToFirst()) {
+            do {
+                poiItems.add(itemFromCursor(cursor));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return poiItems;
     }
 }

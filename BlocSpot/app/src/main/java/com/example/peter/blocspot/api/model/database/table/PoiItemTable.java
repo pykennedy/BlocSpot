@@ -102,7 +102,13 @@ public class PoiItemTable extends Table {
     public static String getLongitude(Cursor cursor) { return getString(cursor, COLUMN_LONGITUDE); }
     public static String getLatitude(Cursor cursor) { return getString(cursor, COLUMN_LATITUDE); }
     public static boolean getViewed(Cursor cursor) { return getBoolean(cursor, COLUMN_VIEWED); }
+
     public Cursor fetchAllItems(SQLiteDatabase readonlyDatabase) {
         return readonlyDatabase.rawQuery("SELECT * FROM " + NAME, null);
+    }
+
+    public Cursor fetchAllPoiWithCategory(SQLiteDatabase readonlyDatabase, String category) {
+        return readonlyDatabase.query(NAME, null, COLUMN_CATEGORY + " = ?", new String[]{category},
+                null, null, null);
     }
 }

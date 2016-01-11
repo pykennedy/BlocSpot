@@ -34,6 +34,8 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
         itemCursor.close();
 
         BlocSpotAnimator.collapse(MapsActivity.getCurrentWindow());
+        MapsActivity.windowIsOpen = false;
+        MapsActivity.activeMenu = "";
 
         marker.remove();
 
@@ -60,6 +62,8 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
         BlocSpotAnimator.centerMapOnPoint(new LatLng(marker.getPosition().latitude, marker.getPosition().longitude),
                 MapsActivity.STANDARD_CAMERA_SPEED, mMap);
         BlocSpotAnimator.collapse(MapsActivity.getCurrentWindow());
+        MapsActivity.windowIsOpen = false;
+        MapsActivity.activeMenu = "";
 
         MapsActivity.pendingMarker = null;
     }
@@ -70,5 +74,7 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
             marker.remove();
         MapsActivity.pendingMarker = null;
         BlocSpotAnimator.collapse(MapsActivity.getCurrentWindow());
+        MapsActivity.windowIsOpen = false;
+        MapsActivity.activeMenu = "";
     }
 }

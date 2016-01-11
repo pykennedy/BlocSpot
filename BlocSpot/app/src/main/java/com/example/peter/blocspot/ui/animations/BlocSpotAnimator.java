@@ -67,10 +67,12 @@ public class BlocSpotAnimator {
     public static void centerMapOnPoint(LatLng location, int speed, GoogleMap mMap) {
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 17), speed, new GoogleMap.CancelableCallback() {
             @Override
-            public void onFinish() {}
+            public void onFinish() {
+            }
 
             @Override
-            public void onCancel() {}
+            public void onCancel() {
+            }
         });
     }
     public static void offsetCenterMapOnPoint(LatLng location, int speed, GoogleMap mMap) {
@@ -82,6 +84,17 @@ public class BlocSpotAnimator {
 
             @Override
             public void onCancel() {}
+        });
+    }
+    public static void centerMapOnPointZoomedIn(LatLng location, int speed, GoogleMap mMap) {
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 18), speed, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+            }
+
+            @Override
+            public void onCancel() {
+            }
         });
     }
 }

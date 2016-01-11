@@ -10,6 +10,11 @@
         android:layout_height="45dp"
         android:text="Default"
         android:textSize="30sp"
-        android:textColor="@color/blueGrey_900"/>
+        android:background="@drawable/list_selector"
+        android:layout_margin="1dp"
+        android:paddingLeft="4dp"
+        android:layout_centerVertical="true"
+        android:textColor="@color/blueGrey_900"
+        android:singleLine="true"/>
 
 </RelativeLayout>
