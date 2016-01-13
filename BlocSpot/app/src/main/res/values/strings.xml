@@ -8,4 +8,34 @@
     <string name="menu_notify">notify</string>
     <string name="menu_search">search</string>
     <string name="menu_settings">settings</string>
+
+    <string name="poi_detail_window_title_hint">POI Name: </string>
+    <string name="poi_detail_window_notes_hint">Notes: </string>
+
+    <string-array name="categories">
+        <item>Category:</item>
+        <item>Arcade</item>
+        <item>Bar</item>
+        <item>Cafe</item>
+        <item>Hotel</item>
+        <item>House</item>
+        <item>Parking</item>
+        <item>Restaurant</item>
+        <item>Sports Area</item>
+        <item>Store</item>
+        <item>Tourist Attraction</item>
+    </string-array>
+    <string-array name="menu_categories">
+        <item>All:</item>
+        <item>Arcades:</item>
+        <item>Bars:</item>
+        <item>Cafes:</item>
+        <item>Hotels:</item>
+        <item>Houses:</item>
+        <item>Parking:</item>
+        <item>Restaurants:</item>
+        <item>Sports Areas:</item>
+        <item>Stores:</item>
+        <item>Tourist Attractions:</item>
+    </string-array>
 </resources>

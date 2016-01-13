@@ -3,6 +3,7 @@ package com.example.peter.blocspot.ui.activity;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -21,16 +22,27 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ActionMenuView;
 
+import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.R;
+import com.example.peter.blocspot.api.DataSource;
+import com.example.peter.blocspot.api.model.PoiItem;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
+import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
+import com.example.peter.blocspot.ui.fragment.MenuWindow;
+import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
+import com.example.peter.blocspot.ui.fragment.SettingsWindow;
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener,
+                            GoogleMap.OnMapClickListener, GoogleMap.OnMarkerClickListener {
 
     private static final String[] INITIAL_PERMS={
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -40,29 +52,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private Menu mMenu;
     private Toolbar mToolbar;
-    View view;
+    static View view;
+    public static Marker pendingMarker;
+    private int fragmentIDGenerator = 0;
+    private Geofence mGeofenceList;
 
-    private LatLng user;
+    public static LatLng user;
     private LatLng targetPOI;
 
     private static int targetHeight = 0;
 
-    private boolean mNotifyIsOn, windowIsOpen;
+    private boolean mNotifyIsOn, mIntentToAdd, poiDetailsOpen;
+    public static boolean windowIsOpen;
 
-    private MenuItem menu, add, notify, search, settings;
+    public static MenuItem menu, add, notify, search, settings;
     //used for determining which menu item is active
-    private String activeMenu = "";
+    public static String activeMenu = "";
 
     private final String MENU_TITLE = "menu";
-    private final String ADD_TITLE = "add";
     private final String SEARCH_TITLE = "search";
     private final String SETTINGS_TITLE = "settings";
     private View MENU_INDICATOR;
     private View SEARCH_INDICATOR;
     private View SETTINGS_INDICATOR;
 
-    private final int STANDARD_CAMERA_SPEED = 400;
-    private final int SLOWER_CAMERA_SPEED = 700;
+    public static final int STANDARD_CAMERA_SPEED = 400;
+    private static final int SLOWER_CAMERA_SPEED = 700;
 
     private void setButtonsToDark() {
         menu.setIcon(R.drawable.menu_dark);
@@ -83,6 +98,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //set all of the icons and windowIndicators to dark
         setButtonsToDark();
         setIndicatorsToDark();
+        mIntentToAdd = false;
 
         //if the currently active menu is pressed, hide it
         if(activeMenu.equals(itemPressed)){
@@ -96,11 +112,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case MENU_TITLE:
                     menu.setIcon(R.drawable.menu_light);
                     MENU_INDICATOR.setVisibility(View.INVISIBLE);
-                    break;
-                case ADD_TITLE:
-                    activeMenu = "";
-                    add.setIcon(R.drawable.add_light);
-                    openWindow = false;
+                    MenuWindow menuWindow = MenuWindow.inflateMenuWindow();
+                    menuWindow.setMap(mMap);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, menuWindow)
+                            .commit();
                     break;
                 case SEARCH_TITLE:
                     search.setIcon(R.drawable.search_light);
@@ -109,6 +125,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case SETTINGS_TITLE:
                     settings.setIcon(R.drawable.settings_light);
                     SETTINGS_INDICATOR.setVisibility(View.INVISIBLE);
+                    SettingsWindow settingsWindow = SettingsWindow.inflateSettingsWindow();
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, settingsWindow)
+                            .commit();
                     break;
             }
         }
@@ -118,8 +138,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void toggleNotify(){
         mNotifyIsOn = !mNotifyIsOn;
         add.setIcon(R.drawable.add_dark);
+        mIntentToAdd = false;
         activeMenu = "";
         notify.setIcon(mNotifyIsOn ? R.drawable.notify_light : R.drawable.notify_dark);
+    }
+
+    private void toggleAdd() {
+        mIntentToAdd = !mIntentToAdd;
+        activeMenu = "";
+        setIndicatorsToDark();
+        setButtonsToDark();
+        add.setIcon(mIntentToAdd ? R.drawable.add_light : R.drawable.add_dark);
     }
 
     @Override
@@ -130,8 +159,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         setupEvenlyDistributedToolbar();
-        //Obtain the SupportMapFragment and get notified when the map is ready to be used.
 
+        //mGeofenceList.add(new Geofence.Builder())
+        //Obtain the SupportMapFragment and get notified when the map is ready to be used.
         view =  findViewById(R.id.popupWindow);
         ViewTreeObserver viewTreeObserver = view.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
@@ -179,7 +209,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return(hasPermission(Manifest.permission.READ_CONTACTS));
     }
 
-
     private boolean hasPermission(String perm) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return(PackageManager.PERMISSION_GRANTED==checkSelfPermission(perm));
@@ -208,8 +237,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onOptionsItemSelected(MenuItem item) {
         if(item == this.notify){
             toggleNotify();
+        } else if (item == this.add) {
+            toggleAdd();
+            if(windowIsOpen) {
+                BlocSpotAnimator.collapse(view);
+                BlocSpotAnimator.centerMapOnPoint(user, targetHeight, mMap);
+                windowIsOpen = false;
+            }
         } else {
-            if(toggleMenuPressed(item.getTitle().toString()) && item != this.add){
+            if(toggleMenuPressed(item.getTitle().toString())){
                 if(windowIsOpen) {
                     BlocSpotAnimator.collapse(view);
                     Handler handler = new Handler();
@@ -218,17 +254,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             BlocSpotAnimator.expand(view, targetHeight);
                         }
                     }, 350);
-                    offsetCenterMapOnPoint(user, SLOWER_CAMERA_SPEED);
+                    BlocSpotAnimator.offsetCenterMapOnPoint(user, SLOWER_CAMERA_SPEED, mMap);
                     windowIsOpen = true;
                 }
                 else {
-                    System.out.println("HURR DURR");
-                    offsetCenterMapOnPoint(user, STANDARD_CAMERA_SPEED);
+                    BlocSpotAnimator.offsetCenterMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
                     BlocSpotAnimator.expand(view, targetHeight);
                     windowIsOpen = true;
                 }
             } else {
-                centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
+                BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
                 activeMenu = "";
                 setIndicatorsToDark();
                 BlocSpotAnimator.collapse(view);
@@ -240,13 +275,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onBackPressed() {
-        if(activeMenu.length()<2)
+        if(activeMenu.length()<2 && !windowIsOpen)
             super.onBackPressed();
         else {
-            centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
+            if(pendingMarker!=null) {
+                pendingMarker.remove();
+                pendingMarker = null;
+            }
+            BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
             activeMenu = "";
             setIndicatorsToDark();
+            setButtonsToDark();
             BlocSpotAnimator.collapse(view);
+            windowIsOpen=false;
         }
     }
 
@@ -263,7 +304,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Add 10 spacing on either side of the toolbar
         mToolbar.setContentInsetsAbsolute(10, 10);
-
         // Get the ChildCount of your Toolbar, this should only be 1
         int childCount = mToolbar.getChildCount();
         // Get the Screen Width in pixels
@@ -301,18 +341,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMarkerClickListener(this);
+
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
         try {
-            System.out.println("GOT TO ATTEMPTING CAMERA SHIFT");
             Location userLocation = locationManager.getLastKnownLocation(provider);
             double lat = userLocation.getLatitude();
             double lng = userLocation.getLongitude();
             user = new LatLng(lat, lng);
-            centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
+            BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
         } catch (SecurityException e) {
             System.err.println("MapsActivity.onMapReady() -- caught SecurityException");
+        }
+        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
+        Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
+                dataSource.getDatabaseOpenHelper().getReadableDatabase());
+        if (cursor.moveToFirst()) {
+            do {
+                PoiItem poiItem = DataSource.itemFromCursor(cursor);
+                mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
+                .title(poiItem.getTitleID()));
+                System.out.println(poiItem.getTitleID() +" "+ poiItem.getCategory() +" "+ poiItem.getCategory()
+                        +" "+ poiItem.getName() +" "+ poiItem.getNotes() +" "+ poiItem.getId());
+            } while (cursor.moveToNext());
+            cursor.close();
         }
     }
 
@@ -321,34 +377,64 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         double lat = location.getLatitude();
         double lng = location.getLongitude();
         user = new LatLng(lat, lng);
-        centerMapOnPoint(user, STANDARD_CAMERA_SPEED);
+        BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
     }
 
-    private void centerMapOnPoint(LatLng location, int speed) {
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 17), speed, new GoogleMap.CancelableCallback() {
-            @Override
-            public void onFinish() {
-                // do nothing i dont care i hope this works
-            }
-
-            @Override
-            public void onCancel() {
-                // do nothing i dont care i hope this works
-            }
-        });
+    @Override
+    public void onMapClick(LatLng position) {
+        targetPOI = position;
+        if(mIntentToAdd) {
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(position)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            if(pendingMarker != null)
+                pendingMarker.remove();
+            pendingMarker = marker;
+            // fragment logic
+            PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
+            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, poiDetailWindow)
+                            .commit();
+            // fragment logic end
+            toggleAdd();
+            BlocSpotAnimator.offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED, mMap);
+            BlocSpotAnimator.expand(view, targetHeight);
+            windowIsOpen = true;
+        }
     }
-    private void offsetCenterMapOnPoint(LatLng location, int speed) {
-        LatLng temp = new LatLng(location.latitude - 0.0014, location.longitude);
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 17), speed, new GoogleMap.CancelableCallback() {
-            @Override
-            public void onFinish() {
-                // do nothing i dont care i hope this works
-            }
 
-            @Override
-            public void onCancel() {
-                // do nothing i dont care i hope this works
-            }
-        });
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+        PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
+        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
+        if(windowIsOpen) {
+            BlocSpotAnimator.collapse(view);
+
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.popupWindowContent, poiDetailWindow)
+                    .commit();
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    BlocSpotAnimator.expand(view, targetHeight);
+                }
+            }, 350);
+            BlocSpotAnimator.offsetCenterMapOnPoint(targetPOI, SLOWER_CAMERA_SPEED, mMap);
+            windowIsOpen = true;
+        }
+        else {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.popupWindowContent, poiDetailWindow)
+                    .commit();
+            BlocSpotAnimator.offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED, mMap);
+            BlocSpotAnimator.expand(view, targetHeight);
+            windowIsOpen = true;
+        }
+        return true;
+    }
+    public static View getCurrentWindow() {
+        return view;
     }
 }
