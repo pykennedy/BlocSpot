@@ -175,15 +175,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         setupEvenlyDistributedToolbar();
 
-        if(apiClient == null) {
-            apiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-        }
-        apiClient.connect();
-
         //mGeofenceList.add(new Geofence.Builder())
         //Obtain the SupportMapFragment and get notified when the map is ready to be used.
         view =  findViewById(R.id.popupWindow);
@@ -210,13 +201,39 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onStart() {
+        if(apiClient == null) {
+            apiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
         apiClient.connect();
+
+        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
+        Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
+                dataSource.getDatabaseOpenHelper().getReadableDatabase());
+        if (cursor.moveToFirst()) {
+            do {
+                PoiItem poiItem = DataSource.itemFromCursor(cursor);
+                /*Marker addingMarker = mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
+                        .title(poiItem.getTitleID())); */
+                addFence(poiItem);
+                System.out.println(poiItem.getTitleID() + " " + poiItem.getCategory() + " " + poiItem.getCategory()
+                        + " " + poiItem.getName() + " " + poiItem.getNotes() + " " + poiItem.getId());
+            } while (cursor.moveToNext());
+            cursor.close();
+            apiClient.connect();
+            LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
+                    .setResultCallback(this);
+        }
         super.onStart();
     }
 
     @Override
     protected void onStop() {
-        apiClient.disconnect();
+        //apiClient.disconnect();
         super.onStop();
     }
 
@@ -392,6 +409,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (SecurityException e) {
             System.err.println("MapsActivity.onMapReady() -- caught SecurityException");
         }
+/*
+        if(apiClient == null) {
+            apiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
+        apiClient.connect();
+*/
         DataSource dataSource = BlocSpotApplication.getSharedDataSource();
         Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
                 dataSource.getDatabaseOpenHelper().getReadableDatabase());
@@ -401,15 +428,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Marker addingMarker = mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
                         .title(poiItem.getTitleID()));
-                addFence(addingMarker);
+                //addFence(poiItem);
                 System.out.println(poiItem.getTitleID() + " " + poiItem.getCategory() + " " + poiItem.getCategory()
                         + " " + poiItem.getName() + " " + poiItem.getNotes() + " " + poiItem.getId());
             } while (cursor.moveToNext());
             cursor.close();
-            apiClient.connect();
+           /* apiClient.connect();
             LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
                     .setResultCallback(this);
+                    */
         }
+
     }
 
     @Override
@@ -478,10 +507,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return view;
     }
 
-    private void addFence(Marker marker) {
+    private void addFence(PoiItem poiItem) {
         mGeofenceList.add(new Geofence.Builder()
-                .setRequestId(marker.getTitle())
-                .setCircularRegion(marker.getPosition().latitude, marker.getPosition().longitude, 100)
+                .setRequestId(poiItem.getTitleID())
+                .setCircularRegion(poiItem.getLatitude(), poiItem.getLongitude(), 100)
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setLoiteringDelay(5000)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
