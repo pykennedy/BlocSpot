@@ -1,7 +1,9 @@
 package com.example.peter.blocspot.ui.activity;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.location.Criteria;
@@ -26,13 +28,20 @@ import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
+import com.example.peter.blocspot.geofencing.GeofenceTransitionsIntentService;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MenuWindow;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.example.peter.blocspot.ui.fragment.SettingsWindow;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Result;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -41,8 +50,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener,
-                            GoogleMap.OnMapClickListener, GoogleMap.OnMarkerClickListener {
+        GoogleMap.OnMapClickListener, GoogleMap.OnMarkerClickListener, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, ResultCallback {
 
     private static final String[] INITIAL_PERMS={
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -55,7 +68,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     static View view;
     public static Marker pendingMarker;
     private int fragmentIDGenerator = 0;
-    private Geofence mGeofenceList;
+    private List<Geofence> mGeofenceList = new ArrayList<>();
+    private GoogleApiClient apiClient;
+    private PendingIntent pendingIntent;
 
     public static LatLng user;
     private LatLng targetPOI;
@@ -160,6 +175,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         setupEvenlyDistributedToolbar();
 
+        if(apiClient == null) {
+            apiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
+        apiClient.connect();
+
         //mGeofenceList.add(new Geofence.Builder())
         //Obtain the SupportMapFragment and get notified when the map is ready to be used.
         view =  findViewById(R.id.popupWindow);
@@ -182,6 +206,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }else{
             initMaps();
         }
+    }
+
+    @Override
+    protected void onStart() {
+        apiClient.connect();
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        apiClient.disconnect();
+        super.onStop();
     }
 
     @Override
@@ -362,13 +398,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (cursor.moveToFirst()) {
             do {
                 PoiItem poiItem = DataSource.itemFromCursor(cursor);
-                mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
-                .title(poiItem.getTitleID()));
-                System.out.println(poiItem.getTitleID() +" "+ poiItem.getCategory() +" "+ poiItem.getCategory()
-                        +" "+ poiItem.getName() +" "+ poiItem.getNotes() +" "+ poiItem.getId());
+                Marker addingMarker = mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
+                        .title(poiItem.getTitleID()));
+                addFence(addingMarker);
+                System.out.println(poiItem.getTitleID() + " " + poiItem.getCategory() + " " + poiItem.getCategory()
+                        + " " + poiItem.getName() + " " + poiItem.getNotes() + " " + poiItem.getId());
             } while (cursor.moveToNext());
             cursor.close();
+            apiClient.connect();
+            LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
+                    .setResultCallback(this);
         }
     }
 
@@ -436,5 +476,51 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     public static View getCurrentWindow() {
         return view;
+    }
+
+    private void addFence(Marker marker) {
+        mGeofenceList.add(new Geofence.Builder()
+                .setRequestId(marker.getTitle())
+                .setCircularRegion(marker.getPosition().latitude, marker.getPosition().longitude, 100)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setLoiteringDelay(5000)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
+                .build());
+    }
+
+    private GeofencingRequest getGeofencingRequest() {
+        return new GeofencingRequest.Builder()
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL)
+                .addGeofences(mGeofenceList)
+                .build();
+    }
+
+    private PendingIntent getGeofencePendingIntent() {
+        if (pendingIntent != null) {
+            return pendingIntent;
+        }
+        Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
+        return PendingIntent.getService(this, 0, intent, PendingIntent.
+                FLAG_UPDATE_CURRENT);
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onResult(Result result) {
+
     }
 }
