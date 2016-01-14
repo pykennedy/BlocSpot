@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.location.Criteria;
@@ -23,6 +24,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ActionMenuView;
+import android.widget.Toast;
 
 import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.R;
@@ -61,7 +63,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.READ_CONTACTS
     };
-
     private GoogleMap mMap;
     private Menu mMenu;
     private Toolbar mToolbar;
@@ -90,6 +91,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private View MENU_INDICATOR;
     private View SEARCH_INDICATOR;
     private View SETTINGS_INDICATOR;
+
+    private SharedPreferences preferences;
 
     public static final int STANDARD_CAMERA_SPEED = 400;
     private static final int SLOWER_CAMERA_SPEED = 700;
@@ -151,7 +154,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void toggleNotify(){
+        //GeofenceTransitionsIntentService.notifyIsOn = !GeofenceTransitionsIntentService.notifyIsOn;
+        //mNotifyIsOn = GeofenceTransitionsIntentService.notifyIsOn;
         mNotifyIsOn = !mNotifyIsOn;
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("notifyIsOnMA", mNotifyIsOn);
+        editor.commit();
+        GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
+        System.out.println("=============" +
+                GeofenceTransitionsIntentService.preferences.getBoolean("notifyIsOnGTIS", true));
         add.setIcon(R.drawable.add_dark);
         mIntentToAdd = false;
         activeMenu = "";
@@ -183,7 +194,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
-                    if(targetHeight == 0){
+                    if (targetHeight == 0) {
                         targetHeight = view.getHeight();
                         view.setVisibility(View.GONE);
                     }
@@ -219,14 +230,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 /*Marker addingMarker = mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
                         .title(poiItem.getTitleID())); */
+
                 addFence(poiItem);
                 System.out.println(poiItem.getTitleID() + " " + poiItem.getCategory() + " " + poiItem.getCategory()
                         + " " + poiItem.getName() + " " + poiItem.getNotes() + " " + poiItem.getId());
             } while (cursor.moveToNext());
             cursor.close();
             apiClient.connect();
-            LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
-                    .setResultCallback(this);
+            final MapsActivity temp = this;
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
+                            .setResultCallback(temp);
+                }
+            }, 1000);
+
         }
         super.onStart();
     }
@@ -284,6 +303,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SEARCH_INDICATOR = findViewById(R.id.menu_indicator_3);
         SETTINGS_INDICATOR = findViewById(R.id.menu_indicator_4);
 
+        preferences = getPreferences(MODE_PRIVATE);
+        mNotifyIsOn = preferences.getBoolean("notifyIsOnMA", true);
+        GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
+        if(mNotifyIsOn)
+            notify.setIcon(R.drawable.notify_light);
+        else
+            notify.setIcon(R.drawable.notify_dark);
+
+
+        /*
+        if(GeofenceTransitionsIntentService.notifyIsOn) {
+            notify.setIcon(R.drawable.notify_light);
+            mNotifyIsOn = true;
+        } else {
+            notify.setIcon(R.drawable.notify_dark);
+            mNotifyIsOn = false;
+        }
+*/
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -408,6 +445,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
         } catch (SecurityException e) {
             System.err.println("MapsActivity.onMapReady() -- caught SecurityException");
+        } catch (NullPointerException e) {
+            user = new LatLng(45, 45);
+            Toast.makeText(view.getContext(), "Failed to find current location. Please wait.",
+                    Toast.LENGTH_SHORT).show();
         }
 /*
         if(apiClient == null) {
@@ -510,7 +551,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void addFence(PoiItem poiItem) {
         mGeofenceList.add(new Geofence.Builder()
                 .setRequestId(poiItem.getTitleID())
-                .setCircularRegion(poiItem.getLatitude(), poiItem.getLongitude(), 100)
+                .setCircularRegion(poiItem.getLatitude(), poiItem.getLongitude(), 500)
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setLoiteringDelay(5000)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
