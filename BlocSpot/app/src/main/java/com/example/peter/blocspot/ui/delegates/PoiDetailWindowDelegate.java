@@ -18,8 +18,7 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
 
     @Override
     public void onDeleteClicked(Marker marker, GoogleMap mMap) {
-        Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), marker.getId());
+        Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(marker.getId());
         if(itemCursor.moveToFirst()) {
             System.out.println(DataSource.itemFromCursor(itemCursor).getId());
         }
@@ -27,8 +26,7 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
         dataSource.removePOI(DataSource.itemFromCursor(itemCursor).getId());
         itemCursor.close();
 
-        itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), marker.getId());
+        itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(marker.getId());
         if(itemCursor.moveToFirst())
             System.out.println(DataSource.itemFromCursor(itemCursor).getId());
         itemCursor.close();
@@ -44,17 +42,13 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
 
     @Override
     public void onSaveClicked(Marker marker, PoiItem poiItem, GoogleMap mMap) {
-        Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), poiItem.getTitleID());
+        Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(poiItem.getTitleID());
         if(itemCursor.moveToFirst())
             poiItem.setId(DataSource.itemFromCursor(itemCursor).getId());
         itemCursor.close();
-        // not sure if i ever use this??? keeping it until confirmed useless
-        //dataSource.getPoiItemList().add(poiItem);
 
         dataSource.savePOI(poiItem);
-        itemCursor = dataSource.getPoiItemTable().fetchRow(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), poiItem.getId());
+        itemCursor = dataSource.getPoiItemTable().fetchRow(poiItem.getId());
         itemCursor.moveToFirst();
         System.out.println(DataSource.itemFromCursor(itemCursor).getId());
         itemCursor.close();

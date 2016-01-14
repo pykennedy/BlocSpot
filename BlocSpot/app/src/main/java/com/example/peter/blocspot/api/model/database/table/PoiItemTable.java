@@ -2,13 +2,17 @@ package com.example.peter.blocspot.api.model.database.table;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+
+import com.example.peter.blocspot.BlocSpotApplication;
+import com.example.peter.blocspot.api.model.database.DatabaseOpenHelper;
 
 public class PoiItemTable extends Table {
 
     public static class Builder implements Table.Builder {
 
         ContentValues values = new ContentValues();
+
+        private DatabaseOpenHelper databaseOpenHelper = BlocSpotApplication.getSharedDataSource().getPoiItemTable().getDatabaseOpenHelper();
 
         public Builder setTitleID(String titleID) {
             values.put(COLUMN_TITLEID, titleID);
@@ -46,16 +50,16 @@ public class PoiItemTable extends Table {
         }
 
         @Override
-        public long insert(SQLiteDatabase writableDB) {
-            return writableDB.insert(NAME, null, values);
+        public long insert() {
+            return databaseOpenHelper.getWritableDatabase().insert(NAME, null, values);
         }
 
-        public void update(SQLiteDatabase writableDB, long id) {
-            writableDB.update(NAME, values, "ID = ?", new String[] { Long.toString(id) });
+        public void update(long id) {
+            databaseOpenHelper.getWritableDatabase().update(NAME, values, "ID = ?", new String[]{Long.toString(id)});
         }
 
-        public void remove(SQLiteDatabase writableDB, long id) {
-            writableDB.delete(NAME, "ID = ?", new String[]{Long.toString(id)});
+        public void remove(long id) {
+            databaseOpenHelper.getWritableDatabase().delete(NAME, "ID = ?", new String[]{Long.toString(id)});
         }
     }
 
@@ -76,6 +80,17 @@ public class PoiItemTable extends Table {
     private boolean viewed;
     private static final String COLUMN_VIEWED = "viewed";
     private int id;
+
+    private DatabaseOpenHelper databaseOpenHelper;
+
+    public DatabaseOpenHelper getDatabaseOpenHelper() {
+        return databaseOpenHelper;
+    }
+
+    public PoiItemTable() {
+        databaseOpenHelper = new DatabaseOpenHelper(BlocSpotApplication.getSharedInstance(),
+                this);
+    }
 
     @Override
     public String getName() {
@@ -103,12 +118,12 @@ public class PoiItemTable extends Table {
     public static String getLatitude(Cursor cursor) { return getString(cursor, COLUMN_LATITUDE); }
     public static boolean getViewed(Cursor cursor) { return getBoolean(cursor, COLUMN_VIEWED); }
 
-    public Cursor fetchAllItems(SQLiteDatabase readonlyDatabase) {
-        return readonlyDatabase.rawQuery("SELECT * FROM " + NAME, null);
+    public Cursor fetchAllItems() {
+        return databaseOpenHelper.getReadableDatabase().rawQuery("SELECT * FROM " + NAME, null);
     }
 
-    public Cursor fetchAllPoiWithCategory(SQLiteDatabase readonlyDatabase, String category) {
-        return readonlyDatabase.query(NAME, null, COLUMN_CATEGORY + " = ?", new String[]{category},
+    public Cursor fetchAllPoiWithCategory(String category) {
+        return databaseOpenHelper.getReadableDatabase().query(NAME, null, COLUMN_CATEGORY + " = ?", new String[]{category},
                 null, null, null);
     }
 }

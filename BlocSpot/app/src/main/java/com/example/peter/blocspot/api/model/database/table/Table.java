@@ -3,10 +3,13 @@ package com.example.peter.blocspot.api.model.database.table;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.example.peter.blocspot.BlocSpotApplication;
+import com.example.peter.blocspot.api.model.database.DatabaseOpenHelper;
+
 public abstract class Table {
 
     public static interface Builder {
-        public long insert(SQLiteDatabase writableDB);
+        public long insert();
     }
 
     protected static final String COLUMN_ID = "id";
@@ -14,16 +17,18 @@ public abstract class Table {
     public abstract String getName();
     public abstract String getCreateStatement();
 
-    public void onUpgrade(SQLiteDatabase writableDatabase, int oldVersion, int newVersion) {
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     }
 
-    public Cursor fetchRow(SQLiteDatabase readonlyDatabase, long rowId) {
-        return readonlyDatabase.query(true, getName(), null, COLUMN_ID + " = ?",
-                new String[] {Long.toString(rowId)}, null, null, null, null);
+    public Cursor fetchRow(long rowId) {
+        DatabaseOpenHelper databaseOpenHelper = BlocSpotApplication.getSharedDataSource().getPoiItemTable().getDatabaseOpenHelper();
+        return databaseOpenHelper.getReadableDatabase().query(true, getName(), null, COLUMN_ID + " = ?",
+                new String[]{Long.toString(rowId)}, null, null, null, null);
     }
 
-    public Cursor fetchRowFromMarkerID(SQLiteDatabase readonlyDatabase, String titleID) {
-        return readonlyDatabase.query(true, getName(), null, COLUMN_TITLEID + " = ?",
+    public Cursor fetchRowFromMarkerID(String titleID) {
+        DatabaseOpenHelper databaseOpenHelper = BlocSpotApplication.getSharedDataSource().getPoiItemTable().getDatabaseOpenHelper();
+        return databaseOpenHelper.getReadableDatabase().query(true, getName(), null, COLUMN_TITLEID + " = ?",
                 new String[] {titleID}, null, null, null, null);
     }
 

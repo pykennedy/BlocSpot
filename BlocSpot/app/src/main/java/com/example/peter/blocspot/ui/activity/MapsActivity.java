@@ -4,9 +4,7 @@ import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -72,6 +70,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<Geofence> mGeofenceList = new ArrayList<>();
     private GoogleApiClient apiClient;
     private PendingIntent pendingIntent;
+    private List<PoiItem> poiItemList;
 
     public static LatLng user;
     private LatLng targetPOI;
@@ -91,8 +90,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private View MENU_INDICATOR;
     private View SEARCH_INDICATOR;
     private View SETTINGS_INDICATOR;
-
-    private SharedPreferences preferences;
 
     public static final int STANDARD_CAMERA_SPEED = 400;
     private static final int SLOWER_CAMERA_SPEED = 700;
@@ -157,16 +154,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //GeofenceTransitionsIntentService.notifyIsOn = !GeofenceTransitionsIntentService.notifyIsOn;
         //mNotifyIsOn = GeofenceTransitionsIntentService.notifyIsOn;
         mNotifyIsOn = !mNotifyIsOn;
-        SharedPreferences.Editor editor = preferences.edit();
+        /*SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("notifyIsOnMA", mNotifyIsOn);
         editor.commit();
         GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
         System.out.println("=============" +
                 GeofenceTransitionsIntentService.preferences.getBoolean("notifyIsOnGTIS", true));
+                */
         add.setIcon(R.drawable.add_dark);
         mIntentToAdd = false;
         activeMenu = "";
-        notify.setIcon(mNotifyIsOn ? R.drawable.notify_light : R.drawable.notify_dark);
+        GeofenceTransitionsIntentService.SharedPreferencesHandler.setNotifyIsOn(
+                this, !GeofenceTransitionsIntentService.SharedPreferencesHandler.
+                        preferences.getBoolean("notifyIsOn", true));
+        notify.setIcon(GeofenceTransitionsIntentService.SharedPreferencesHandler.
+                preferences.getBoolean("notifyIsOn", true)
+                ? R.drawable.notify_light : R.drawable.notify_dark);
     }
 
     private void toggleAdd() {
@@ -208,10 +211,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }else{
             initMaps();
         }
-    }
 
-    @Override
-    protected void onStart() {
         if(apiClient == null) {
             apiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
@@ -220,34 +220,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .build();
         }
         apiClient.connect();
-
-        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
-        Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase());
-        if (cursor.moveToFirst()) {
-            do {
-                PoiItem poiItem = DataSource.itemFromCursor(cursor);
-                /*Marker addingMarker = mMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
-                        .title(poiItem.getTitleID())); */
-
-                addFence(poiItem);
-                System.out.println(poiItem.getTitleID() + " " + poiItem.getCategory() + " " + poiItem.getCategory()
-                        + " " + poiItem.getName() + " " + poiItem.getNotes() + " " + poiItem.getId());
-            } while (cursor.moveToNext());
-            cursor.close();
-            apiClient.connect();
-            final MapsActivity temp = this;
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                public void run() {
-                    LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
-                            .setResultCallback(temp);
-                }
-            }, 1000);
-
-        }
-        super.onStart();
     }
 
     @Override
@@ -303,6 +275,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SEARCH_INDICATOR = findViewById(R.id.menu_indicator_3);
         SETTINGS_INDICATOR = findViewById(R.id.menu_indicator_4);
 
+        /*
         preferences = getPreferences(MODE_PRIVATE);
         mNotifyIsOn = preferences.getBoolean("notifyIsOnMA", true);
         GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
@@ -312,7 +285,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             notify.setIcon(R.drawable.notify_dark);
 
 
-        /*
+
         if(GeofenceTransitionsIntentService.notifyIsOn) {
             notify.setIcon(R.drawable.notify_light);
             mNotifyIsOn = true;
@@ -321,6 +294,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             mNotifyIsOn = false;
         }
 */
+        GeofenceTransitionsIntentService.SharedPreferencesHandler.setPreferences(this);
+        notify.setIcon(GeofenceTransitionsIntentService.SharedPreferencesHandler.
+                preferences.getBoolean("notifyIsOn", true)
+        ? R.drawable.notify_light : R.drawable.notify_dark);
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -461,25 +439,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         apiClient.connect();
 */
         DataSource dataSource = BlocSpotApplication.getSharedDataSource();
-        Cursor cursor = dataSource.getPoiItemTable().fetchAllItems(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase());
-        if (cursor.moveToFirst()) {
-            do {
-                PoiItem poiItem = DataSource.itemFromCursor(cursor);
-                Marker addingMarker = mMap.addMarker(new MarkerOptions()
+        poiItemList = dataSource.getPoiItemList();
+        if(poiItemList != null || !poiItemList.isEmpty()) {
+            for (int i = 0; i < poiItemList.size(); i++) {
+                PoiItem poiItem = poiItemList.get(i);
+                mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(poiItem.getLatitude(), poiItem.getLongitude()))
                         .title(poiItem.getTitleID()));
-                //addFence(poiItem);
-                System.out.println(poiItem.getTitleID() + " " + poiItem.getCategory() + " " + poiItem.getCategory()
-                        + " " + poiItem.getName() + " " + poiItem.getNotes() + " " + poiItem.getId());
-            } while (cursor.moveToNext());
-            cursor.close();
-           /* apiClient.connect();
-            LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
-                    .setResultCallback(this);
-                    */
+            }
         }
-
     }
 
     @Override
@@ -576,7 +544,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onConnected(Bundle bundle) {
+        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
+        poiItemList = dataSource.getPoiItemList();
 
+        if(poiItemList != null || !poiItemList.isEmpty()) {
+            for(int i = 0; i<poiItemList.size(); i++) {
+                addFence(poiItemList.get(i));
+            }
+            /*
+            final MapsActivity temp = this;
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
+                            .setResultCallback(temp);
+                }
+            }, 1000);
+            */
+            LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
+                    .setResultCallback(this);
+        }
     }
 
     @Override

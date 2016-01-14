@@ -22,12 +22,7 @@ public class GeofenceTransitionsIntentService extends IntentService {
         super("");
     }
 
-    public static SharedPreferences preferences;
-    public static void setNotifyToggle(boolean bool) {
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("notifyIsOnGTIS", bool);
-        editor.commit();
-    }
+    public static boolean notifyIsOn;
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -72,17 +67,31 @@ public class GeofenceTransitionsIntentService extends IntentService {
 // 3. Create and send a notification
         Notification notification = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(Double.toString(Math.random()))
-                .setContentText(Double.toString(Math.random()))
+                .setContentTitle("POI Detected")
+                .setContentText("You are near a saved Point of Interest")
                 .setContentIntent(pendingNotificationIntent)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(Double.toString(Math.random())))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build();
-        preferences = getSharedPreferences("notifyIsOnGTIS", MODE_PRIVATE);
-        if(preferences.getBoolean("notifIsOnGTIS", true)) {
-            System.out.println("============ ATTEMPTING TO NOTIFY =============");
+        SharedPreferencesHandler.preferences = getSharedPreferences("notifyIsOn", MODE_PRIVATE);
+        if(SharedPreferencesHandler.preferences.getBoolean("notifyIsOn", true)) {
             notificationManager.notify(0, notification);
+        }
+        System.out.println("============ ATTEMPTING TO NOTIFY === "+
+                SharedPreferencesHandler.preferences.getBoolean("notifyIsOn", true) +" ===");
+    }
+
+    public static class SharedPreferencesHandler {
+        public static SharedPreferences preferences;
+        public static void setNotifyIsOn(Context context, boolean bool) {
+            setPreferences(context);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean("notifyIsOn", bool);
+            editor.commit();
+        }
+        public static void setPreferences(Context context) {
+            preferences = context.getSharedPreferences("notifyIsOn", MODE_PRIVATE);
         }
     }
 }

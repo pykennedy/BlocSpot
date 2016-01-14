@@ -101,8 +101,7 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
 
         if(currentMarker.getTitle()!=null) {
             DataSource dataSource = BlocSpotApplication.getSharedDataSource();
-            Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                    dataSource.getDatabaseOpenHelper().getReadableDatabase(), currentMarker.getTitle());
+            Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(currentMarker.getTitle());
             itemCursor.moveToFirst();
             PoiItem poiItem = DataSource.itemFromCursor(itemCursor);
             this.loadInfo(poiItem);
