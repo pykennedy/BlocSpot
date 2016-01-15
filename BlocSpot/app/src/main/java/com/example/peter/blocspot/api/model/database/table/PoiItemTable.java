@@ -46,36 +46,28 @@ public class PoiItemTable extends Table {
         }
 
         @Override
-        public long insert(SQLiteDatabase writableDB) {
-            return writableDB.insert(NAME, null, values);
+        public long insert(SQLiteDatabase writeableDB) {
+            return writeableDB.insert(NAME, null, values);
         }
 
-        public void update(SQLiteDatabase writableDB, long id) {
-            writableDB.update(NAME, values, "ID = ?", new String[] { Long.toString(id) });
+        public void update(SQLiteDatabase writeableDB, long id) {
+            writeableDB.update(NAME, values, "ID = ?", new String[]{Long.toString(id)});
         }
 
-        public void remove(SQLiteDatabase writableDB, long id) {
-            writableDB.delete(NAME, "ID = ?", new String[]{Long.toString(id)});
+        public void remove(SQLiteDatabase writeableDB, long id) {
+            writeableDB.delete(NAME, "ID = ?", new String[]{Long.toString(id)});
         }
     }
 
     private static final String NAME = "poi_items";
 
-    private String titleID;
     private static final String COLUMN_TITLEID = "titleID";
-    private String name;
     private static final String COLUMN_NAME = "name";
-    private String category;
     private static final String COLUMN_CATEGORY = "category";
-    private String notes;
     private static final String COLUMN_NOTES = "notes";
-    private double longitude;
     private static final String COLUMN_LONGITUDE = "longitude";
-    private double latitude;
     private static final String COLUMN_LATITUDE = "latitude";
-    private boolean viewed;
     private static final String COLUMN_VIEWED = "viewed";
-    private int id;
 
     @Override
     public String getName() {
@@ -103,12 +95,12 @@ public class PoiItemTable extends Table {
     public static String getLatitude(Cursor cursor) { return getString(cursor, COLUMN_LATITUDE); }
     public static boolean getViewed(Cursor cursor) { return getBoolean(cursor, COLUMN_VIEWED); }
 
-    public Cursor fetchAllItems(SQLiteDatabase readonlyDatabase) {
-        return readonlyDatabase.rawQuery("SELECT * FROM " + NAME, null);
+    public Cursor fetchAllItems(SQLiteDatabase readableDB) {
+        return readableDB.rawQuery("SELECT * FROM " + NAME, null);
     }
 
-    public Cursor fetchAllPoiWithCategory(SQLiteDatabase readonlyDatabase, String category) {
-        return readonlyDatabase.query(NAME, null, COLUMN_CATEGORY + " = ?", new String[]{category},
+    public Cursor fetchAllPoiWithCategory(SQLiteDatabase readableDB, String category) {
+        return readableDB.query(NAME, null, COLUMN_CATEGORY + " = ?", new String[]{category},
                 null, null, null);
     }
 }

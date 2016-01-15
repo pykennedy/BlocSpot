@@ -1,6 +1,5 @@
 package com.example.peter.blocspot.ui.fragment;
 
-import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.KeyEvent;
@@ -101,12 +100,8 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
 
         if(currentMarker.getTitle()!=null) {
             DataSource dataSource = BlocSpotApplication.getSharedDataSource();
-            Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                    dataSource.getDatabaseOpenHelper().getReadableDatabase(), currentMarker.getTitle());
-            itemCursor.moveToFirst();
-            PoiItem poiItem = DataSource.itemFromCursor(itemCursor);
+            PoiItem poiItem = dataSource.getPoiItem(currentMarker.getTitle());
             this.loadInfo(poiItem);
-            itemCursor.close();
         }
 
         return view;
