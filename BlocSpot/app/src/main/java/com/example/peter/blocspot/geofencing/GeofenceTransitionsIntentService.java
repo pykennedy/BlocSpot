@@ -6,7 +6,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
@@ -21,8 +20,6 @@ public class GeofenceTransitionsIntentService extends IntentService {
     public GeofenceTransitionsIntentService() {
         super("");
     }
-
-    public static boolean notifyIsOn;
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -74,24 +71,10 @@ public class GeofenceTransitionsIntentService extends IntentService {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build();
-        SharedPreferencesHandler.preferences = getSharedPreferences("notifyIsOn", MODE_PRIVATE);
-        if(SharedPreferencesHandler.preferences.getBoolean("notifyIsOn", true)) {
+        if(SharedPreferencesHandler.getNotifyIsOn(this)) {
             notificationManager.notify(0, notification);
         }
         System.out.println("============ ATTEMPTING TO NOTIFY === "+
-                SharedPreferencesHandler.preferences.getBoolean("notifyIsOn", true) +" ===");
-    }
-
-    public static class SharedPreferencesHandler {
-        public static SharedPreferences preferences;
-        public static void setNotifyIsOn(Context context, boolean bool) {
-            setPreferences(context);
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putBoolean("notifyIsOn", bool);
-            editor.commit();
-        }
-        public static void setPreferences(Context context) {
-            preferences = context.getSharedPreferences("notifyIsOn", MODE_PRIVATE);
-        }
+                SharedPreferencesHandler.getNotifyIsOn(this) +" ===");
     }
 }

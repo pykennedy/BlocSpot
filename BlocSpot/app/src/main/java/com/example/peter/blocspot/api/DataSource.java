@@ -4,20 +4,21 @@ import android.database.Cursor;
 
 import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.api.model.PoiItem;
+import com.example.peter.blocspot.api.model.database.DatabaseOpenHelper;
 import com.example.peter.blocspot.api.model.database.table.PoiItemTable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DataSource {
-    //private DatabaseOpenHelper databaseOpenHelper;
+    private DatabaseOpenHelper databaseOpenHelper;
     private PoiItemTable poiItemTable;
     private List<PoiItem> poiItemList;
 
     public DataSource() {
         poiItemTable = new PoiItemTable();
-        //databaseOpenHelper = new DatabaseOpenHelper(BlocSpotApplication.getSharedInstance(),
-          //      poiItemTable);
+        databaseOpenHelper = new DatabaseOpenHelper(BlocSpotApplication.getSharedInstance(),
+                poiItemTable);
         poiItemList = new ArrayList<>();
 
         new Thread(new Runnable() {
@@ -41,6 +42,11 @@ public class DataSource {
 */
   //  PoiItem(String titleID, String name, String category, String notes,
     //        int id, double longitude, double latitude, boolean viewed)
+
+    public PoiItem getPoiItem(String titleID) {
+        Cursor cursor = poiItemTable.fetchRowFromMarkerID(databaseOpenHelper.getReadableDatabase(), titleID);
+        return itemFromCursor(cursor);
+    }
     public static PoiItem itemFromCursor(Cursor cursor) {
         return new PoiItem(PoiItemTable.getTitleID(cursor), PoiItemTable.getName(cursor),
                 PoiItemTable.getCategory(cursor), PoiItemTable.getNotes(cursor),
@@ -50,7 +56,7 @@ public class DataSource {
 
     public List<PoiItem> getPoiItemList() {
         ArrayList<PoiItem> poiItems = new ArrayList<>();
-        Cursor cursor = getPoiItemTable().fetchAllItems();
+        Cursor cursor = getPoiItemTable().fetchAllItems(databaseOpenHelper.getReadableDatabase());
         if (cursor.moveToFirst()) {
             do {
                 poiItems.add(itemFromCursor(cursor));
@@ -70,23 +76,23 @@ public class DataSource {
                 .setLongitude(poiItem.getLongitude())
                 .setTitleID(poiItem.getTitleID());
         if(poiItem.getId() != -1) {
-            builder.update(poiItem.getId());
+            builder.update(databaseOpenHelper.getWritableDatabase(), poiItem.getId());
             System.out.println("update");
         }
         else {
-            poiItem.setId(builder.insert());
+            poiItem.setId(builder.insert(databaseOpenHelper.getWritableDatabase()));
             System.out.println("insert");
         }
     }
     public void removePOI(long id) {
         PoiItemTable.Builder builder = new PoiItemTable.Builder();
-        builder.remove(id);
+        builder.remove(databaseOpenHelper.getWritableDatabase(), id);
         System.out.println("remove");
     }
 
     public List<PoiItem> getPoiByCategory(String category) {
         ArrayList<PoiItem> poiItems = new ArrayList<>();
-        Cursor cursor = getPoiItemTable().fetchAllPoiWithCategory(category);
+        Cursor cursor = getPoiItemTable().fetchAllPoiWithCategory(databaseOpenHelper.getReadableDatabase(), category);
         if (cursor.moveToFirst()) {
             do {
                 poiItems.add(itemFromCursor(cursor));

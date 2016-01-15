@@ -29,6 +29,7 @@ import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
 import com.example.peter.blocspot.geofencing.GeofenceTransitionsIntentService;
+import com.example.peter.blocspot.geofencing.SharedPreferencesHandler;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MenuWindow;
@@ -164,11 +165,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         add.setIcon(R.drawable.add_dark);
         mIntentToAdd = false;
         activeMenu = "";
-        GeofenceTransitionsIntentService.SharedPreferencesHandler.setNotifyIsOn(
-                this, !GeofenceTransitionsIntentService.SharedPreferencesHandler.
-                        preferences.getBoolean("notifyIsOn", true));
-        notify.setIcon(GeofenceTransitionsIntentService.SharedPreferencesHandler.
-                preferences.getBoolean("notifyIsOn", true)
+        SharedPreferencesHandler.setNotifyIsOn(
+                this, !SharedPreferencesHandler.getNotifyIsOn(this));
+        notify.setIcon(SharedPreferencesHandler.getNotifyIsOn(this)
                 ? R.drawable.notify_light : R.drawable.notify_dark);
     }
 
@@ -294,9 +293,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             mNotifyIsOn = false;
         }
 */
-        GeofenceTransitionsIntentService.SharedPreferencesHandler.setPreferences(this);
-        notify.setIcon(GeofenceTransitionsIntentService.SharedPreferencesHandler.
-                preferences.getBoolean("notifyIsOn", true)
+        notify.setIcon(SharedPreferencesHandler.getNotifyIsOn(this)
         ? R.drawable.notify_light : R.drawable.notify_dark);
 
         return super.onCreateOptionsMenu(menu);
