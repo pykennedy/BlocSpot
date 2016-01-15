@@ -1,7 +1,6 @@
 package com.example.peter.blocspot.api;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 
 import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.api.model.PoiItem;
@@ -20,7 +19,7 @@ public class DataSource {
         poiItemTable = new PoiItemTable();
         databaseOpenHelper = new DatabaseOpenHelper(BlocSpotApplication.getSharedInstance(),
                 poiItemTable);
-        poiItemList = new ArrayList<PoiItem>();
+        poiItemList = new ArrayList<>();
 
         new Thread(new Runnable() {
             @Override
@@ -28,7 +27,7 @@ public class DataSource {
                 if (false) {
                     BlocSpotApplication.getSharedInstance().deleteDatabase("blocspot_db");
                 }
-                SQLiteDatabase writableDatabase = databaseOpenHelper.getWritableDatabase();
+                //SQLiteDatabase writableDatabase = databaseOpenHelper.getWritableDatabase();
             }
         }).start();
     }
@@ -36,13 +35,18 @@ public class DataSource {
     public PoiItemTable getPoiItemTable() {
         return poiItemTable;
     }
-
+/*
     public DatabaseOpenHelper getDatabaseOpenHelper() {
         return databaseOpenHelper;
     }
-
+*/
   //  PoiItem(String titleID, String name, String category, String notes,
     //        int id, double longitude, double latitude, boolean viewed)
+
+    public PoiItem getPoiItem(String titleID) {
+        Cursor cursor = poiItemTable.fetchRowFromMarkerID(databaseOpenHelper.getReadableDatabase(), titleID);
+        return itemFromCursor(cursor);
+    }
     public static PoiItem itemFromCursor(Cursor cursor) {
         return new PoiItem(PoiItemTable.getTitleID(cursor), PoiItemTable.getName(cursor),
                 PoiItemTable.getCategory(cursor), PoiItemTable.getNotes(cursor),
@@ -52,7 +56,7 @@ public class DataSource {
 
     public List<PoiItem> getPoiItemList() {
         ArrayList<PoiItem> poiItems = new ArrayList<>();
-        Cursor cursor = getPoiItemTable().fetchAllItems(getDatabaseOpenHelper().getReadableDatabase());
+        Cursor cursor = getPoiItemTable().fetchAllItems(databaseOpenHelper.getReadableDatabase());
         if (cursor.moveToFirst()) {
             do {
                 poiItems.add(itemFromCursor(cursor));
@@ -88,8 +92,7 @@ public class DataSource {
 
     public List<PoiItem> getPoiByCategory(String category) {
         ArrayList<PoiItem> poiItems = new ArrayList<>();
-        Cursor cursor = getPoiItemTable().fetchAllPoiWithCategory(
-                getDatabaseOpenHelper().getReadableDatabase(), category);
+        Cursor cursor = getPoiItemTable().fetchAllPoiWithCategory(databaseOpenHelper.getReadableDatabase(), category);
         if (cursor.moveToFirst()) {
             do {
                 poiItems.add(itemFromCursor(cursor));

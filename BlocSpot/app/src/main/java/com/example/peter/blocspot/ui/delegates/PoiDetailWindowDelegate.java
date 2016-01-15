@@ -1,7 +1,5 @@
 package com.example.peter.blocspot.ui.delegates;
 
-import android.database.Cursor;
-
 import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
@@ -18,20 +16,8 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
 
     @Override
     public void onDeleteClicked(Marker marker, GoogleMap mMap) {
-        Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), marker.getId());
-        if(itemCursor.moveToFirst()) {
-            System.out.println(DataSource.itemFromCursor(itemCursor).getId());
-        }
 
-        dataSource.removePOI(DataSource.itemFromCursor(itemCursor).getId());
-        itemCursor.close();
-
-        itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), marker.getId());
-        if(itemCursor.moveToFirst())
-            System.out.println(DataSource.itemFromCursor(itemCursor).getId());
-        itemCursor.close();
+        dataSource.removePOI(dataSource.getPoiItem(marker.getTitle()).getId());
 
         BlocSpotAnimator.collapse(MapsActivity.getCurrentWindow());
         MapsActivity.windowIsOpen = false;
@@ -44,20 +30,10 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
 
     @Override
     public void onSaveClicked(Marker marker, PoiItem poiItem, GoogleMap mMap) {
-        Cursor itemCursor = dataSource.getPoiItemTable().fetchRowFromMarkerID(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), poiItem.getTitleID());
-        if(itemCursor.moveToFirst())
-            poiItem.setId(DataSource.itemFromCursor(itemCursor).getId());
-        itemCursor.close();
-        // not sure if i ever use this??? keeping it until confirmed useless
-        //dataSource.getPoiItemList().add(poiItem);
+
+        poiItem.setId(dataSource.getPoiItem(marker.getTitle()).getId());
 
         dataSource.savePOI(poiItem);
-        itemCursor = dataSource.getPoiItemTable().fetchRow(
-                dataSource.getDatabaseOpenHelper().getReadableDatabase(), poiItem.getId());
-        itemCursor.moveToFirst();
-        System.out.println(DataSource.itemFromCursor(itemCursor).getId());
-        itemCursor.close();
 
         BlocSpotAnimator.centerMapOnPoint(new LatLng(marker.getPosition().latitude, marker.getPosition().longitude),
                 MapsActivity.STANDARD_CAMERA_SPEED, mMap);
