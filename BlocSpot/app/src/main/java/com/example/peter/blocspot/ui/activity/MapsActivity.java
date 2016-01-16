@@ -3,7 +3,6 @@ package com.example.peter.blocspot.ui.activity;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
@@ -28,7 +27,7 @@ import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
-import com.example.peter.blocspot.geofencing.GeofenceTransitionsIntentService;
+import com.example.peter.blocspot.geofencing.GeofenceHelper;
 import com.example.peter.blocspot.geofencing.SharedPreferencesHandler;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
@@ -40,7 +39,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Result;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
@@ -467,7 +465,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             pendingMarker = marker;
             // fragment logic
             PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
-            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
+            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap, apiClient, mGeofenceList,
+                    pendingIntent, this);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.popupWindowContent, poiDetailWindow)
                             .commit();
@@ -483,7 +482,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onMarkerClick(Marker marker) {
         targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
         PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
-        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
+        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap, apiClient, mGeofenceList,
+                pendingIntent, this);
         if(windowIsOpen) {
             BlocSpotAnimator.collapse(view);
 
@@ -513,54 +513,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return view;
     }
 
-    private void addFence(PoiItem poiItem) {
-        mGeofenceList.add(new Geofence.Builder()
-                .setRequestId(poiItem.getTitleID())
-                .setCircularRegion(poiItem.getLatitude(), poiItem.getLongitude(), 500)
-                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                .setLoiteringDelay(5000)
-                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
-                .build());
-    }
-
-    private GeofencingRequest getGeofencingRequest() {
-        return new GeofencingRequest.Builder()
-                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL)
-                .addGeofences(mGeofenceList)
-                .build();
-    }
-
-    private PendingIntent getGeofencePendingIntent() {
-        if (pendingIntent != null) {
-            return pendingIntent;
-        }
-        Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
-        return PendingIntent.getService(this, 0, intent, PendingIntent.
-                FLAG_UPDATE_CURRENT);
-    }
-
     @Override
     public void onConnected(Bundle bundle) {
-        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
-        poiItemList = dataSource.getPoiItemList();
-
-        if(poiItemList != null || !poiItemList.isEmpty()) {
-            for(int i = 0; i<poiItemList.size(); i++) {
-                addFence(poiItemList.get(i));
-            }
-            /*
-            final MapsActivity temp = this;
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                public void run() {
-                    LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
-                            .setResultCallback(temp);
-                }
-            }, 1000);
-            */
-            LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
-                    .setResultCallback(this);
-        }
+        GeofenceHelper.updateAllFences(apiClient, mGeofenceList, pendingIntent, this);
     }
 
     @Override
