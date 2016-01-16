@@ -33,6 +33,7 @@ import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MenuWindow;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
+import com.example.peter.blocspot.ui.fragment.SearchWindow;
 import com.example.peter.blocspot.ui.fragment.SettingsWindow;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -135,6 +136,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case SEARCH_TITLE:
                     search.setIcon(R.drawable.search_light);
                     SEARCH_INDICATOR.setVisibility(View.INVISIBLE);
+                    SearchWindow searchWindow = SearchWindow.inflateSearchWindow();
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, searchWindow)
+                            .commit();
                     break;
                 case SETTINGS_TITLE:
                     settings.setIcon(R.drawable.settings_light);
@@ -150,16 +155,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void toggleNotify(){
-        //GeofenceTransitionsIntentService.notifyIsOn = !GeofenceTransitionsIntentService.notifyIsOn;
-        //mNotifyIsOn = GeofenceTransitionsIntentService.notifyIsOn;
-        mNotifyIsOn = !mNotifyIsOn;
-        /*SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("notifyIsOnMA", mNotifyIsOn);
-        editor.commit();
-        GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
-        System.out.println("=============" +
-                GeofenceTransitionsIntentService.preferences.getBoolean("notifyIsOnGTIS", true));
-                */
         add.setIcon(R.drawable.add_dark);
         mIntentToAdd = false;
         activeMenu = "";
@@ -271,26 +266,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         MENU_INDICATOR = findViewById(R.id.menu_indicator_0);
         SEARCH_INDICATOR = findViewById(R.id.menu_indicator_3);
         SETTINGS_INDICATOR = findViewById(R.id.menu_indicator_4);
-
-        /*
-        preferences = getPreferences(MODE_PRIVATE);
-        mNotifyIsOn = preferences.getBoolean("notifyIsOnMA", true);
-        GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
-        if(mNotifyIsOn)
-            notify.setIcon(R.drawable.notify_light);
-        else
-            notify.setIcon(R.drawable.notify_dark);
-
-
-
-        if(GeofenceTransitionsIntentService.notifyIsOn) {
-            notify.setIcon(R.drawable.notify_light);
-            mNotifyIsOn = true;
-        } else {
-            notify.setIcon(R.drawable.notify_dark);
-            mNotifyIsOn = false;
-        }
-*/
         notify.setIcon(SharedPreferencesHandler.getNotifyIsOn(this)
         ? R.drawable.notify_light : R.drawable.notify_dark);
 
@@ -480,6 +455,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        setButtonsToDark();
+        setIndicatorsToDark();
         targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
         PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
         poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap, apiClient, mGeofenceList,
