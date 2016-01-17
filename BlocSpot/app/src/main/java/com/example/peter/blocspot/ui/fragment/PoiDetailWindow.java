@@ -114,6 +114,8 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
             }
         });
 
+        if(currentMarker.getSnippet() != null)
+            title.setText(currentMarker.getSnippet());
         if(currentMarker.getTitle()!=null) {
             DataSource dataSource = BlocSpotApplication.getSharedDataSource();
             PoiItem poiItem = dataSource.getPoiItem(currentMarker.getTitle());
