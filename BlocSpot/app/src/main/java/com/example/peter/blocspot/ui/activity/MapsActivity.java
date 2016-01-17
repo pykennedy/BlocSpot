@@ -3,7 +3,6 @@ package com.example.peter.blocspot.ui.activity;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
@@ -28,19 +27,20 @@ import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
-import com.example.peter.blocspot.geofencing.GeofenceTransitionsIntentService;
+import com.example.peter.blocspot.geofencing.GeofenceHelper;
 import com.example.peter.blocspot.geofencing.SharedPreferencesHandler;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
+import com.example.peter.blocspot.ui.delegates.SearchWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MenuWindow;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
+import com.example.peter.blocspot.ui.fragment.SearchWindow;
 import com.example.peter.blocspot.ui.fragment.SettingsWindow;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Result;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
@@ -67,6 +67,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Toolbar mToolbar;
     static View view;
     public static Marker pendingMarker;
+    public static List<Marker> yelpMarkers = new ArrayList<>();
     private int fragmentIDGenerator = 0;
     private List<Geofence> mGeofenceList = new ArrayList<>();
     private GoogleApiClient apiClient;
@@ -137,6 +138,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case SEARCH_TITLE:
                     search.setIcon(R.drawable.search_light);
                     SEARCH_INDICATOR.setVisibility(View.INVISIBLE);
+                    SearchWindow searchWindow = SearchWindow.inflateSearchWindow();
+                    searchWindow.setDelegate(new SearchWindowDelegate(), mMap);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.popupWindowContent, searchWindow)
+                            .commit();
                     break;
                 case SETTINGS_TITLE:
                     settings.setIcon(R.drawable.settings_light);
@@ -152,16 +158,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void toggleNotify(){
-        //GeofenceTransitionsIntentService.notifyIsOn = !GeofenceTransitionsIntentService.notifyIsOn;
-        //mNotifyIsOn = GeofenceTransitionsIntentService.notifyIsOn;
-        mNotifyIsOn = !mNotifyIsOn;
-        /*SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("notifyIsOnMA", mNotifyIsOn);
-        editor.commit();
-        GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
-        System.out.println("=============" +
-                GeofenceTransitionsIntentService.preferences.getBoolean("notifyIsOnGTIS", true));
-                */
         add.setIcon(R.drawable.add_dark);
         mIntentToAdd = false;
         activeMenu = "";
@@ -273,26 +269,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         MENU_INDICATOR = findViewById(R.id.menu_indicator_0);
         SEARCH_INDICATOR = findViewById(R.id.menu_indicator_3);
         SETTINGS_INDICATOR = findViewById(R.id.menu_indicator_4);
-
-        /*
-        preferences = getPreferences(MODE_PRIVATE);
-        mNotifyIsOn = preferences.getBoolean("notifyIsOnMA", true);
-        GeofenceTransitionsIntentService.setNotifyToggle(mNotifyIsOn);
-        if(mNotifyIsOn)
-            notify.setIcon(R.drawable.notify_light);
-        else
-            notify.setIcon(R.drawable.notify_dark);
-
-
-
-        if(GeofenceTransitionsIntentService.notifyIsOn) {
-            notify.setIcon(R.drawable.notify_light);
-            mNotifyIsOn = true;
-        } else {
-            notify.setIcon(R.drawable.notify_dark);
-            mNotifyIsOn = false;
-        }
-*/
         notify.setIcon(SharedPreferencesHandler.getNotifyIsOn(this)
         ? R.drawable.notify_light : R.drawable.notify_dark);
 
@@ -341,6 +317,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onBackPressed() {
         if(activeMenu.length()<2 && !windowIsOpen)
+            if(yelpMarkers.size() > 0 || !yelpMarkers.isEmpty()) {
+                clearUnsavedYelpMarkers();
+                Toast.makeText(this, "Unsaved Markers Cleared", Toast.LENGTH_SHORT).show();
+            } else
             super.onBackPressed();
         else {
             if(pendingMarker!=null) {
@@ -461,13 +441,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(mIntentToAdd) {
             Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(position)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
             if(pendingMarker != null)
                 pendingMarker.remove();
             pendingMarker = marker;
             // fragment logic
             PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
-            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
+            poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap, apiClient, mGeofenceList,
+                    pendingIntent, this);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.popupWindowContent, poiDetailWindow)
                             .commit();
@@ -481,9 +462,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        pendingMarker = marker;
+        pendingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+        setButtonsToDark();
+        setIndicatorsToDark();
         targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
         PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
-        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap);
+        poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap, apiClient, mGeofenceList,
+                pendingIntent, this);
         if(windowIsOpen) {
             BlocSpotAnimator.collapse(view);
 
@@ -513,54 +499,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return view;
     }
 
-    private void addFence(PoiItem poiItem) {
-        mGeofenceList.add(new Geofence.Builder()
-                .setRequestId(poiItem.getTitleID())
-                .setCircularRegion(poiItem.getLatitude(), poiItem.getLongitude(), 500)
-                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                .setLoiteringDelay(5000)
-                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
-                .build());
-    }
-
-    private GeofencingRequest getGeofencingRequest() {
-        return new GeofencingRequest.Builder()
-                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL)
-                .addGeofences(mGeofenceList)
-                .build();
-    }
-
-    private PendingIntent getGeofencePendingIntent() {
-        if (pendingIntent != null) {
-            return pendingIntent;
+    public static void clearUnsavedYelpMarkers() {
+        for(int i = 0; i < yelpMarkers.size(); i++) {
+            Marker marker = yelpMarkers.get(i);
+            if(marker != null)
+                marker.remove();
+            else {
+                yelpMarkers.clear();
+                return;
+            }
         }
-        Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
-        return PendingIntent.getService(this, 0, intent, PendingIntent.
-                FLAG_UPDATE_CURRENT);
+        yelpMarkers.clear();
+    }
+
+    public static int getYelpMarkerIndex(String markerID) {
+        for(int i = 0; i < yelpMarkers.size(); i++) {
+            if(yelpMarkers.get(i).getId().equals(markerID))
+                return i;
+        }
+        return -1;
     }
 
     @Override
     public void onConnected(Bundle bundle) {
-        DataSource dataSource = BlocSpotApplication.getSharedDataSource();
-        poiItemList = dataSource.getPoiItemList();
-
-        if(poiItemList != null || !poiItemList.isEmpty()) {
-            for(int i = 0; i<poiItemList.size(); i++) {
-                addFence(poiItemList.get(i));
-            }
-            /*
-            final MapsActivity temp = this;
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                public void run() {
-                    LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
-                            .setResultCallback(temp);
-                }
-            }, 1000);
-            */
-            LocationServices.GeofencingApi.addGeofences(apiClient, getGeofencingRequest(), getGeofencePendingIntent())
-                    .setResultCallback(this);
-        }
+        GeofenceHelper.updateAllFences(apiClient, mGeofenceList, pendingIntent, this);
     }
 
     @Override

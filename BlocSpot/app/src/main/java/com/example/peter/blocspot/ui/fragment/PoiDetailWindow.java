@@ -1,5 +1,6 @@
 package com.example.peter.blocspot.ui.fragment;
 
+import android.app.PendingIntent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.KeyEvent;
@@ -18,9 +19,14 @@ import com.example.peter.blocspot.BlocSpotApplication;
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.api.DataSource;
 import com.example.peter.blocspot.api.model.PoiItem;
+import com.example.peter.blocspot.ui.activity.MapsActivity;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
+
+import java.util.List;
 
 public class PoiDetailWindow extends Fragment implements View.OnClickListener {
 
@@ -32,11 +38,16 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     private Spinner category;
     private static Marker currentMarker;
     private GoogleMap mMap;
+    GoogleApiClient apiClient;
+    List<Geofence> mGeofenceList;
+    PendingIntent pendingIntent;
+    MapsActivity mapsActivity;
     //private PoIModel model;
 
     public static interface Delegate {
-        public void onDeleteClicked(Marker marker, GoogleMap mMap);
-        public void onSaveClicked(Marker marker, PoiItem poiItem, GoogleMap mMap);
+        public void onDeleteClicked(Marker marker, GoogleMap mMap, GoogleApiClient apiClient);
+        public void onSaveClicked(Marker marker, PoiItem poiItem, GoogleMap mMap, GoogleApiClient apiClient,
+                                  List<Geofence> mGeofenceList, PendingIntent pendingIntent, MapsActivity mapsActivity);
         public void onCancelClicked(Marker marker);
     }
 
@@ -47,9 +58,14 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
         return delegate;
     }
 
-    public void setDelegate(PoiDetailWindowDelegate delegate, GoogleMap mMap) {
+    public void setDelegate(PoiDetailWindowDelegate delegate, GoogleMap mMap, GoogleApiClient apiClient,
+                            List<Geofence> mGeofenceList, PendingIntent pendingIntent, MapsActivity mapsActivity) {
         this.delegate = delegate;
         this.mMap = mMap;
+        this.apiClient = apiClient;
+        this.mGeofenceList = mGeofenceList;
+        this.pendingIntent = pendingIntent;
+        this.mapsActivity = mapsActivity;
     }
 
     public static PoiDetailWindow inflateAddPOIMenuWindow (Marker marker) {
@@ -98,6 +114,8 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
             }
         });
 
+        if(currentMarker.getSnippet() != null)
+            title.setText(currentMarker.getSnippet());
         if(currentMarker.getTitle()!=null) {
             DataSource dataSource = BlocSpotApplication.getSharedDataSource();
             PoiItem poiItem = dataSource.getPoiItem(currentMarker.getTitle());
@@ -110,7 +128,7 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if(v == delete) {
-            getDelegate().onDeleteClicked(currentMarker, mMap);
+            getDelegate().onDeleteClicked(currentMarker, mMap, apiClient);
         }
         if( v == save) {
            // public PoiItem(String titleID, String name, String category, String notes,
@@ -124,7 +142,8 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
                     category.getSelectedItem().toString(), notes.getText().toString(),
                     -1, currentMarker.getPosition().longitude,
                     currentMarker.getPosition().latitude, viewed.isChecked());
-            getDelegate().onSaveClicked(currentMarker, poiItem, mMap);
+            getDelegate().onSaveClicked(currentMarker, poiItem, mMap, apiClient, mGeofenceList,
+                    pendingIntent, mapsActivity);
 
         }
         if(v == cancel) {
