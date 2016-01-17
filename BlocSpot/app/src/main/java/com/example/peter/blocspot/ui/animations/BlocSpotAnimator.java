@@ -97,4 +97,15 @@ public class BlocSpotAnimator {
             }
         });
     }
+    public static void centerMapOnPointZoomedOut(LatLng location, int speed, GoogleMap mMap) {
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15), speed, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+            }
+
+            @Override
+            public void onCancel() {
+            }
+        });
+    }
 }

@@ -34,7 +34,7 @@ public class GeofenceHelper {
     public static void addFence(List<Geofence> mGeofenceList, PoiItem poiItem) {
         mGeofenceList.add(new Geofence.Builder()
                 .setRequestId(poiItem.getTitleID())
-                .setCircularRegion(poiItem.getLatitude(), poiItem.getLongitude(), 500)
+                .setCircularRegion(poiItem.getLatitude(), poiItem.getLongitude(), 100)
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setLoiteringDelay(5000)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)

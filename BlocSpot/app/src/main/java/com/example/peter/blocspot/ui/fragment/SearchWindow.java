@@ -9,12 +9,31 @@ import android.widget.Button;
 
 import com.example.peter.blocspot.R;
 import com.example.peter.blocspot.ui.activity.MapsActivity;
-import com.example.peter.blocspot.yelp.YelpAPI;
+import com.example.peter.blocspot.ui.delegates.SearchWindowDelegate;
+import com.google.android.gms.maps.GoogleMap;
 
 public class SearchWindow extends Fragment {
 
     private View view;
     private Button searchButton;
+    private SearchWindowDelegate delegate;
+    private GoogleMap mMap;
+
+    public static interface Delegate {
+        public void searchClicked(String searchParams, GoogleMap mMap);
+    }
+
+    public Delegate getDelegate() {
+        if (delegate == null) {
+            return null;
+        }
+        return delegate;
+    }
+
+    public void setDelegate(SearchWindowDelegate delegate, GoogleMap mMap) {
+        this.delegate = delegate;
+        this.mMap = mMap;
+    }
 
     public static SearchWindow inflateSearchWindow() {
         SearchWindow searchWindow = new SearchWindow();
@@ -28,9 +47,8 @@ public class SearchWindow extends Fragment {
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                YelpAPI yelpAPI = new YelpAPI();
-                String result = yelpAPI.searchForBusinessesByLocation("Starbucks", MapsActivity.user);
-                System.out.println(result);
+                getDelegate().searchClicked(searchButton.getText().toString(), mMap);
+                System.out.println("GOT TO ON CLICK");
             }
         });
         return view;

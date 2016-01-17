@@ -31,6 +31,7 @@ import com.example.peter.blocspot.geofencing.GeofenceHelper;
 import com.example.peter.blocspot.geofencing.SharedPreferencesHandler;
 import com.example.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.example.peter.blocspot.ui.delegates.PoiDetailWindowDelegate;
+import com.example.peter.blocspot.ui.delegates.SearchWindowDelegate;
 import com.example.peter.blocspot.ui.fragment.MenuWindow;
 import com.example.peter.blocspot.ui.fragment.PoiDetailWindow;
 import com.example.peter.blocspot.ui.fragment.SearchWindow;
@@ -66,6 +67,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Toolbar mToolbar;
     static View view;
     public static Marker pendingMarker;
+    public static List<Marker> yelpMarkers = new ArrayList<>();
     private int fragmentIDGenerator = 0;
     private List<Geofence> mGeofenceList = new ArrayList<>();
     private GoogleApiClient apiClient;
@@ -137,6 +139,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     search.setIcon(R.drawable.search_light);
                     SEARCH_INDICATOR.setVisibility(View.INVISIBLE);
                     SearchWindow searchWindow = SearchWindow.inflateSearchWindow();
+                    searchWindow.setDelegate(new SearchWindowDelegate(), mMap);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.popupWindowContent, searchWindow)
                             .commit();
@@ -314,6 +317,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onBackPressed() {
         if(activeMenu.length()<2 && !windowIsOpen)
+            if(yelpMarkers.size() > 0 || !yelpMarkers.isEmpty()) {
+                clearUnsavedYelpMarkers();
+                Toast.makeText(this, "Unsaved Markers Cleared", Toast.LENGTH_SHORT).show();
+            } else
             super.onBackPressed();
         else {
             if(pendingMarker!=null) {
@@ -434,7 +441,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(mIntentToAdd) {
             Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(position)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
             if(pendingMarker != null)
                 pendingMarker.remove();
             pendingMarker = marker;
@@ -455,6 +462,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        pendingMarker = marker;
+        pendingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
         setButtonsToDark();
         setIndicatorsToDark();
         targetPOI = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
@@ -488,6 +497,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     public static View getCurrentWindow() {
         return view;
+    }
+
+    public static void clearUnsavedYelpMarkers() {
+        for(int i = 0; i < yelpMarkers.size(); i++) {
+            Marker marker = yelpMarkers.get(i);
+            if(marker != null)
+                marker.remove();
+            else {
+                yelpMarkers.clear();
+                return;
+            }
+        }
+        yelpMarkers.clear();
+    }
+
+    public static int getYelpMarkerIndex(String markerID) {
+        for(int i = 0; i < yelpMarkers.size(); i++) {
+            if(yelpMarkers.get(i).getId().equals(markerID))
+                return i;
+        }
+        return -1;
     }
 
     @Override

@@ -13,6 +13,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
@@ -44,9 +45,9 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
     public void onSaveClicked(Marker marker, PoiItem poiItem, GoogleMap mMap, GoogleApiClient apiClient,
                               List<Geofence> mGeofenceList, PendingIntent pendingIntent, MapsActivity mapsActivity) {
 
-        poiItem.setId(dataSource.getPoiItem(marker.getTitle()).getId());
-
         dataSource.savePOI(poiItem);
+        poiItem.setId(dataSource.getPoiItem(marker.getTitle()).getId());
+        marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
 
         BlocSpotAnimator.centerMapOnPoint(new LatLng(marker.getPosition().latitude, marker.getPosition().longitude),
                 MapsActivity.STANDARD_CAMERA_SPEED, mMap);
@@ -61,8 +62,12 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
 
     @Override
     public void onCancelClicked(Marker marker) {
-        if(marker.getTitle() == null)
+        if(marker.getTitle() == null && marker.getSnippet() == null)
             marker.remove();
+        else if(marker.getSnippet() != null)
+            marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET));
+        else
+            marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
         MapsActivity.pendingMarker = null;
         BlocSpotAnimator.collapse(MapsActivity.getCurrentWindow());
         MapsActivity.windowIsOpen = false;
