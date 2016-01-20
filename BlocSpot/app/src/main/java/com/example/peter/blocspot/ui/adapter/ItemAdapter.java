@@ -56,7 +56,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemAdapterVie
     }
 
 
-
     class ItemAdapterViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         TextView title;
