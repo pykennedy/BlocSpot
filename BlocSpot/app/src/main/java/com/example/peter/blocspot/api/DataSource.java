@@ -13,13 +13,11 @@ import java.util.List;
 public class DataSource {
     private DatabaseOpenHelper databaseOpenHelper;
     private PoiItemTable poiItemTable;
-    private List<PoiItem> poiItemList;
 
     public DataSource() {
         poiItemTable = new PoiItemTable();
         databaseOpenHelper = new DatabaseOpenHelper(BlocSpotApplication.getSharedInstance(),
                 poiItemTable);
-        poiItemList = new ArrayList<>();
 
         new Thread(new Runnable() {
             @Override
@@ -27,7 +25,6 @@ public class DataSource {
                 if (false) {
                     BlocSpotApplication.getSharedInstance().deleteDatabase("blocspot_db");
                 }
-                //SQLiteDatabase writableDatabase = databaseOpenHelper.getWritableDatabase();
             }
         }).start();
     }
@@ -35,16 +32,10 @@ public class DataSource {
     public PoiItemTable getPoiItemTable() {
         return poiItemTable;
     }
-/*
-    public DatabaseOpenHelper getDatabaseOpenHelper() {
-        return databaseOpenHelper;
-    }
-*/
-  //  PoiItem(String titleID, String name, String category, String notes,
-    //        int id, double longitude, double latitude, boolean viewed)
 
     public PoiItem getPoiItem(String titleID) {
         Cursor cursor = poiItemTable.fetchRowFromMarkerID(databaseOpenHelper.getReadableDatabase(), titleID);
+        cursor.moveToFirst();
         return itemFromCursor(cursor);
     }
     public static PoiItem itemFromCursor(Cursor cursor) {
