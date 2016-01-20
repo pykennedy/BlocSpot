@@ -123,31 +123,6 @@ public class YelpAPI {
      * @param yelpApiCli <tt>YelpAPICLI</tt> command line arguments
      */
     private static void queryAPI(YelpAPI yelpApi, YelpAPICLI yelpApiCli) {
-    /*    String searchResponseJSON =
-                yelpApi.searchForBusinessesByLocation(yelpApiCli.term, yelpApiCli.location);
-
-        JSONParser parser = new JSONParser();
-        JSONObject response = null;
-        try {
-            response = (JSONObject) parser.parse(searchResponseJSON);
-        } catch (ParseException pe) {
-            System.out.println("Error: could not parse JSON response:");
-            System.out.println(searchResponseJSON);
-            System.exit(1);
-        }
-
-        JSONArray businesses = (JSONArray) response.get("businesses");
-        JSONObject firstBusiness = (JSONObject) businesses.get(0);
-        String firstBusinessID = firstBusiness.get("id").toString();
-        System.out.println(String.format(
-                "%s businesses found, querying business info for the top result \"%s\" ...",
-                businesses.size(), firstBusinessID));
-
-        // Select the first business and display business details
-        String businessResponseJSON = yelpApi.searchByBusinessId(firstBusinessID.toString());
-        System.out.println(String.format("Result for business \"%s\" found:", firstBusinessID));
-        System.out.println(businessResponseJSON);
-        */
     }
 
     /**
@@ -170,12 +145,5 @@ public class YelpAPI {
         new YelpAPI(CONSUMER_KEY, CONSUMER_SECRET, TOKEN, TOKEN_SECRET);
     }
     public static void main(String[] args) {
-    /*
-        YelpAPICLI yelpApiCli = new YelpAPICLI();
-        new JCommander(yelpApiCli, args);
-
-        YelpAPI yelpApi = new YelpAPI(CONSUMER_KEY, CONSUMER_SECRET, TOKEN, TOKEN_SECRET);
-        queryAPI(yelpApi, yelpApiCli);
-    */
     }
 }

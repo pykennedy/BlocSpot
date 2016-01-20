@@ -68,7 +68,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     static View view;
     public static Marker pendingMarker;
     public static List<Marker> yelpMarkers = new ArrayList<>();
-    private int fragmentIDGenerator = 0;
     private List<Geofence> mGeofenceList = new ArrayList<>();
     private GoogleApiClient apiClient;
     private PendingIntent pendingIntent;
@@ -79,11 +78,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private static int targetHeight = 0;
 
-    private boolean mNotifyIsOn, mIntentToAdd, poiDetailsOpen;
+    private boolean mIntentToAdd;
     public static boolean windowIsOpen;
 
     public static MenuItem menu, add, notify, search, settings;
-    //used for determining which menu item is active
     public static String activeMenu = "";
 
     private final String MENU_TITLE = "menu";
@@ -111,20 +109,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private boolean toggleMenuPressed(String itemPressed){
         boolean openWindow = true;
-
-        //set all of the icons and windowIndicators to dark
         setButtonsToDark();
         setIndicatorsToDark();
         mIntentToAdd = false;
 
-        //if the currently active menu is pressed, hide it
         if(activeMenu.equals(itemPressed)){
             activeMenu = "";
             openWindow = false;
         }else{
-            //otherwise, set the new item pressed and turn on the icon
             activeMenu = itemPressed;
-            //TODO - Swap appropriate fragmemnt
             switch (itemPressed){
                 case MENU_TITLE:
                     menu.setIcon(R.drawable.menu_light);
@@ -184,8 +177,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         setupEvenlyDistributedToolbar();
 
-        //mGeofenceList.add(new Geofence.Builder())
-        //Obtain the SupportMapFragment and get notified when the map is ready to be used.
         view =  findViewById(R.id.popupWindow);
         ViewTreeObserver viewTreeObserver = view.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
@@ -219,7 +210,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onStop() {
-        //apiClient.disconnect();
         super.onStop();
     }
 
@@ -324,7 +314,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             super.onBackPressed();
         else {
             if(pendingMarker!=null) {
-                pendingMarker.remove();
+                if(pendingMarker.getSnippet() != null)
+                    pendingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET));
+                else
+                    pendingMarker.remove();
                 pendingMarker = null;
             }
             BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
@@ -337,44 +330,31 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void setupEvenlyDistributedToolbar(){
-        // Use Display metrics to get Screen Dimensions
         Display display = getWindowManager().getDefaultDisplay();
         DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
 
-        // Toolbar
         mToolbar = (Toolbar) findViewById(R.id.tb_maps_activity);
-        // Inflate your menu
         mToolbar.inflateMenu(R.menu.bottom_bar_menu);
 
-        // Add 10 spacing on either side of the toolbar
         mToolbar.setContentInsetsAbsolute(10, 10);
-        // Get the ChildCount of your Toolbar, this should only be 1
         int childCount = mToolbar.getChildCount();
-        // Get the Screen Width in pixels
         int screenWidth = metrics.widthPixels;
 
-        // Create the Toolbar Params based on the screenWidth
-        Toolbar.LayoutParams toolbarParams = new Toolbar.LayoutParams(screenWidth, ActionMenuView.LayoutParams.WRAP_CONTENT);
+        Toolbar.LayoutParams toolbarParams = new Toolbar.LayoutParams(screenWidth,
+                ActionMenuView.LayoutParams.WRAP_CONTENT);
 
-        // Loop through the child Items
         for(int i = 0; i < childCount; i++){
-            // Get the item at the current index
             View childView = mToolbar.getChildAt(i);
-            // If its a ViewGroup
             if(childView instanceof ViewGroup){
-                // Set its layout params
                 childView.setLayoutParams(toolbarParams);
-                // Get the child count of this view group, and compute the item widths based on this count & screen size
                 int innerChildCount = ((ViewGroup) childView).getChildCount();
                 int itemWidth  = (screenWidth / innerChildCount);
-                // Create layout params for the ActionMenuView
-                ActionMenuView.LayoutParams params = new ActionMenuView.LayoutParams(itemWidth, ActionMenuView.LayoutParams.WRAP_CONTENT);
-                // Loop through the children
+                ActionMenuView.LayoutParams params = new ActionMenuView.LayoutParams(itemWidth,
+                        ActionMenuView.LayoutParams.WRAP_CONTENT);
                 for(int j = 0; j < innerChildCount; j++){
                     View grandChild = ((ViewGroup) childView).getChildAt(j);
                     if(grandChild instanceof ActionMenuItemView){
-                        // set the layout parameters on each View
                         grandChild.setLayoutParams(params);
                     }
                 }
@@ -405,16 +385,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Toast.makeText(view.getContext(), "Failed to find current location. Please wait.",
                     Toast.LENGTH_SHORT).show();
         }
-/*
-        if(apiClient == null) {
-            apiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-        }
-        apiClient.connect();
-*/
         DataSource dataSource = BlocSpotApplication.getSharedDataSource();
         poiItemList = dataSource.getPoiItemList();
         if(poiItemList != null || !poiItemList.isEmpty()) {
@@ -445,14 +415,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if(pendingMarker != null)
                 pendingMarker.remove();
             pendingMarker = marker;
-            // fragment logic
             PoiDetailWindow poiDetailWindow = PoiDetailWindow.inflateAddPOIMenuWindow(marker);
             poiDetailWindow.setDelegate(new PoiDetailWindowDelegate(), mMap, apiClient, mGeofenceList,
                     pendingIntent, this);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.popupWindowContent, poiDetailWindow)
                             .commit();
-            // fragment logic end
             toggleAdd();
             BlocSpotAnimator.offsetCenterMapOnPoint(targetPOI, STANDARD_CAMERA_SPEED, mMap);
             BlocSpotAnimator.expand(view, targetHeight);
@@ -504,10 +472,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Marker marker = yelpMarkers.get(i);
             if(marker != null)
                 marker.remove();
-            else {
-                yelpMarkers.clear();
-                return;
-            }
         }
         yelpMarkers.clear();
     }

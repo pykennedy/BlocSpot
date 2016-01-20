@@ -25,7 +25,6 @@ public class DataSource {
                 if (false) {
                     BlocSpotApplication.getSharedInstance().deleteDatabase("blocspot_db");
                 }
-                //SQLiteDatabase writableDatabase = databaseOpenHelper.getWritableDatabase();
             }
         }).start();
     }
@@ -33,13 +32,6 @@ public class DataSource {
     public PoiItemTable getPoiItemTable() {
         return poiItemTable;
     }
-/*
-    public DatabaseOpenHelper getDatabaseOpenHelper() {
-        return databaseOpenHelper;
-    }
-*/
-  //  PoiItem(String titleID, String name, String category, String notes,
-    //        int id, double longitude, double latitude, boolean viewed)
 
     public PoiItem getPoiItem(String titleID) {
         Cursor cursor = poiItemTable.fetchRowFromMarkerID(databaseOpenHelper.getReadableDatabase(), titleID);

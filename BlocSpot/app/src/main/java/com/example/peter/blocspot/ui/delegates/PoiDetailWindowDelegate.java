@@ -27,7 +27,10 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
     @Override
     public void onDeleteClicked(Marker marker, GoogleMap mMap, GoogleApiClient apiClient) {
 
-        dataSource.removePOI(dataSource.getPoiItem(marker.getTitle()).getId());
+        if(marker.getTitle() == null)
+            marker.remove();
+        else
+            dataSource.removePOI(dataSource.getPoiItem(marker.getTitle()).getId());
 
         BlocSpotAnimator.collapse(MapsActivity.getCurrentWindow());
         MapsActivity.windowIsOpen = false;
@@ -48,6 +51,7 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
         dataSource.savePOI(poiItem);
         poiItem.setId(dataSource.getPoiItem(marker.getTitle()).getId());
         marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+        MapsActivity.yelpMarkers.remove(MapsActivity.getYelpMarkerIndex(marker.getTitle()));
 
         BlocSpotAnimator.centerMapOnPoint(new LatLng(marker.getPosition().latitude, marker.getPosition().longitude),
                 MapsActivity.STANDARD_CAMERA_SPEED, mMap);

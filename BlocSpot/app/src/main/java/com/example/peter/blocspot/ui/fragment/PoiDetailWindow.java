@@ -42,7 +42,6 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     List<Geofence> mGeofenceList;
     PendingIntent pendingIntent;
     MapsActivity mapsActivity;
-    //private PoIModel model;
 
     public static interface Delegate {
         public void onDeleteClicked(Marker marker, GoogleMap mMap, GoogleApiClient apiClient);
@@ -69,12 +68,8 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
     }
 
     public static PoiDetailWindow inflateAddPOIMenuWindow (Marker marker) {
-        // presumably somewhere im going to be using this marker i passed for database stuff
         PoiDetailWindow poiDetailWindow = new PoiDetailWindow();
         currentMarker = marker;
-        //poiDetailWindow.setDelegate(new PoiDetailWindowDelegate());
-
-        //poiDetailWindow.setModel
 
         return poiDetailWindow;
     }
@@ -131,8 +126,6 @@ public class PoiDetailWindow extends Fragment implements View.OnClickListener {
             getDelegate().onDeleteClicked(currentMarker, mMap, apiClient);
         }
         if( v == save) {
-           // public PoiItem(String titleID, String name, String category, String notes,
-            //long id, double longitude, double latitude, boolean viewed)
             if(currentMarker.getTitle() == null)
                 currentMarker.setTitle(currentMarker.getId());
             String name = title.getText().toString();

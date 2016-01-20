@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.example.peter.blocspot.R;
-import com.example.peter.blocspot.ui.activity.MapsActivity;
 import com.example.peter.blocspot.ui.delegates.SearchWindowDelegate;
 import com.google.android.gms.maps.GoogleMap;
 

@@ -3,9 +3,6 @@ package com.example.peter.blocspot.api.model.database.table;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.example.peter.blocspot.api.DataSource;
-import com.example.peter.blocspot.api.model.PoiItem;
-
 public abstract class Table {
 
     public static interface Builder {
@@ -20,22 +17,9 @@ public abstract class Table {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     }
 
-    public Cursor fetchRow(SQLiteDatabase readableDB, long rowId) {
-        return readableDB.query(true, getName(), null, COLUMN_ID + " = ?",
-                new String[]{Long.toString(rowId)}, null, null, null, null);
-    }
-
     public Cursor fetchRowFromMarkerID(SQLiteDatabase readableDB, String titleID) {
         return readableDB.query(true, getName(), null, COLUMN_TITLEID + " = ?",
                 new String[] {titleID}, null, null, null, null);
-    }
-
-    public PoiItem getItem(SQLiteDatabase readableDB, String titleID) {
-        Cursor cursor = fetchRowFromMarkerID(readableDB, titleID);
-        cursor.moveToFirst();
-        PoiItem poiItem = DataSource.itemFromCursor(cursor);
-        cursor.close();
-        return poiItem;
     }
 
     protected static String getString(Cursor cursor, String column) {
