@@ -50,9 +50,13 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
 
         dataSource.savePOI(poiItem);
         poiItem.setId(dataSource.getPoiItem(marker.getTitle()).getId());
+        marker.setSnippet(null);
         marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-        if(!MapsActivity.yelpMarkers.isEmpty())
-            MapsActivity.yelpMarkers.remove(MapsActivity.getYelpMarkerIndex(marker.getTitle()));
+        if(!MapsActivity.yelpMarkers.isEmpty()) {
+            int index = MapsActivity.getYelpMarkerIndex(marker.getTitle());
+            if(index >=0)
+                MapsActivity.yelpMarkers.remove(index);
+        }
 
         BlocSpotAnimator.centerMapOnPoint(new LatLng(marker.getPosition().latitude, marker.getPosition().longitude),
                 MapsActivity.STANDARD_CAMERA_SPEED, mMap);

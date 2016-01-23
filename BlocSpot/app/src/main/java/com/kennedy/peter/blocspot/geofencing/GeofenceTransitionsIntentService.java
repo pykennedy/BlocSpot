@@ -60,7 +60,5 @@ public class GeofenceTransitionsIntentService extends IntentService {
         if(SharedPreferencesHandler.getNotifyIsOn(this)) {
             notificationManager.notify(0, notification);
         }
-        System.out.println("============ ATTEMPTING TO NOTIFY === "+
-                SharedPreferencesHandler.getNotifyIsOn(this) +" ===");
     }
 }

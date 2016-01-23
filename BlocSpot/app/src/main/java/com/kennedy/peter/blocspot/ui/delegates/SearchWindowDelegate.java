@@ -27,6 +27,7 @@ public class SearchWindowDelegate implements SearchWindow.Delegate {
     }
 
     private void addMarkers(GoogleMap mMap) {
+        MapsActivity.clearUnsavedYelpMarkers();
         MapsActivity.yelpMarkers.clear();
         for(int i = 0; i < markerOptionsList.size(); i++) {
             Marker marker = mMap.addMarker(markerOptionsList.get(i));
@@ -41,6 +42,7 @@ public class SearchWindowDelegate implements SearchWindow.Delegate {
             public void run() {
                 YelpAPI yelpAPI = new YelpAPI();
                 String result = yelpAPI.searchForBusinessesByLocation(searchParams, MapsActivity.user);
+                markerOptionsList.clear();
 
                 try {
                     JSONObject jsonObject = new JSONObject(result);
