@@ -16,7 +16,7 @@
             android:layout_height="match_parent"
             android:layout_marginBottom="?attr/actionBarSize"
             android:elevation="0dp"
-            tools:context=".ui.activity.MapsActivity"/>
+            tools:context="com.kennedy.peter.blocspot.ui.activity.MapsActivity"/>
 
         <LinearLayout
             android:id="@+id/popupWindow"
