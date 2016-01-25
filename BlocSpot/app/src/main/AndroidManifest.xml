@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.peter.blocspot">
+    package="com.kennedy.peter.blocspot">
 
     <!--
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
@@ -10,14 +10,14 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <application android:name=".BlocSpotApplication"
+    <application android:name="com.kennedy.peter.blocspot.BlocSpotApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <service android:name="com.example.peter.blocspot.geofencing.GeofenceTransitionsIntentService"/>
+        <service android:name="com.kennedy.peter.blocspot.geofencing.GeofenceTransitionsIntentService"/>
 
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -32,7 +32,7 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".ui.activity.MapsActivity"
+            android:name="com.kennedy.peter.blocspot.ui.activity.MapsActivity"
             android:label="@string/title_activity_maps">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
