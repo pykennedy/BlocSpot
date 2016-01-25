@@ -266,6 +266,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
+        turnOffActiveMarker();
         if(item == this.notify){
             toggleNotify();
         } else if (item == this.add) {
@@ -306,20 +307,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onBackPressed() {
-        if(activeMenu.length()<2 && !windowIsOpen)
+        if(mIntentToAdd) {
+            add.setIcon(R.drawable.add_dark);
+            mIntentToAdd = false;
+        }
+        else if(activeMenu.length()<2 && !windowIsOpen)
             if(yelpMarkers.size() > 0 || !yelpMarkers.isEmpty()) {
                 clearUnsavedYelpMarkers();
-                Toast.makeText(this, "Unsaved Markers Cleared", Toast.LENGTH_SHORT).show();
-            } else
-            super.onBackPressed();
-        else {
-            if(pendingMarker!=null) {
-                if(pendingMarker.getSnippet() != null)
-                    pendingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET));
-                else
-                    pendingMarker.remove();
                 pendingMarker = null;
+                Toast.makeText(this, "Unsaved Markers Cleared", Toast.LENGTH_SHORT).show();
+            } else {
+                pendingMarker = null;
+                super.onBackPressed();
             }
+        else {
+            turnOffActiveMarker();
             BlocSpotAnimator.centerMapOnPoint(user, STANDARD_CAMERA_SPEED, mMap);
             activeMenu = "";
             setIndicatorsToDark();
@@ -368,6 +370,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerClickListener(this);
+        pendingMarker = null;
 
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
@@ -428,8 +431,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private void turnOffActiveMarker() {
+        if(pendingMarker != null) {
+            if(pendingMarker.getSnippet() != null)
+                pendingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET));
+            else
+                pendingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+        }
+    }
+
     @Override
     public boolean onMarkerClick(Marker marker) {
+        turnOffActiveMarker();
         pendingMarker = marker;
         pendingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
         setButtonsToDark();

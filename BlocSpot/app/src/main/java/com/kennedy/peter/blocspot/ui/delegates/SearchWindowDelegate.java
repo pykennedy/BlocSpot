@@ -5,7 +5,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.kennedy.peter.blocspot.BlocSpotApplication;
 import com.kennedy.peter.blocspot.R;
+import com.kennedy.peter.blocspot.api.model.PoiItem;
 import com.kennedy.peter.blocspot.ui.activity.MapsActivity;
 import com.kennedy.peter.blocspot.ui.animations.BlocSpotAnimator;
 import com.kennedy.peter.blocspot.ui.fragment.SearchWindow;
@@ -29,9 +31,20 @@ public class SearchWindowDelegate implements SearchWindow.Delegate {
     private void addMarkers(GoogleMap mMap) {
         MapsActivity.clearUnsavedYelpMarkers();
         MapsActivity.yelpMarkers.clear();
+
+        List<PoiItem> poiItemList = BlocSpotApplication.getSharedDataSource().getPoiItemList();
         for(int i = 0; i < markerOptionsList.size(); i++) {
-            Marker marker = mMap.addMarker(markerOptionsList.get(i));
-            MapsActivity.yelpMarkers.add(marker);
+            boolean readyToAdd = true;
+            for(int j = 0; j < poiItemList.size(); j++) {
+                if((markerOptionsList.get(i).getPosition().longitude == poiItemList.get(j).getLongitude()
+                        && markerOptionsList.get(i).getPosition().latitude == poiItemList.get(j).getLatitude())) {
+                    readyToAdd = false;
+                }
+            }
+            if(readyToAdd) {
+                Marker marker = mMap.addMarker(markerOptionsList.get(i));
+                MapsActivity.yelpMarkers.add(marker);
+            }
         }
     }
 
