@@ -48,8 +48,12 @@ public class PoiDetailWindowDelegate implements PoiDetailWindow.Delegate {
     public void onSaveClicked(Marker marker, PoiItem poiItem, GoogleMap mMap, GoogleApiClient apiClient,
                               List<Geofence> mGeofenceList, PendingIntent pendingIntent, MapsActivity mapsActivity) {
 
+        PoiItem fetched = dataSource.getPoiItem(marker.getTitle());
+        long id = -1;
+        if(fetched != null)
+            id = fetched.getId();
+        poiItem.setId(id);
         dataSource.savePOI(poiItem);
-        poiItem.setId(dataSource.getPoiItem(marker.getTitle()).getId());
         marker.setSnippet(null);
         marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
         if(!MapsActivity.yelpMarkers.isEmpty()) {

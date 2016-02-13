@@ -35,8 +35,10 @@ public class DataSource {
 
     public PoiItem getPoiItem(String titleID) {
         Cursor cursor = poiItemTable.fetchRowFromMarkerID(databaseOpenHelper.getReadableDatabase(), titleID);
-        cursor.moveToFirst();
-        return itemFromCursor(cursor);
+        if(cursor.moveToFirst())
+            return itemFromCursor(cursor);
+        else
+            return null;
     }
     public static PoiItem itemFromCursor(Cursor cursor) {
         return new PoiItem(PoiItemTable.getTitleID(cursor), PoiItemTable.getName(cursor),
@@ -68,17 +70,14 @@ public class DataSource {
                 .setTitleID(poiItem.getTitleID());
         if(poiItem.getId() != -1) {
             builder.update(databaseOpenHelper.getWritableDatabase(), poiItem.getId());
-            System.out.println("update");
         }
         else {
             poiItem.setId(builder.insert(databaseOpenHelper.getWritableDatabase()));
-            System.out.println("insert");
         }
     }
     public void removePOI(long id) {
         PoiItemTable.Builder builder = new PoiItemTable.Builder();
         builder.remove(databaseOpenHelper.getWritableDatabase(), id);
-        System.out.println("remove");
     }
 
     public List<PoiItem> getPoiByCategory(String category) {
